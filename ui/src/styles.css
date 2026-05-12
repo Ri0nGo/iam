@@ -1,0 +1,250 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  font-family: Inter, sans-serif;
+  background: #f5f7fb;
+}
+
+body {
+  color: #101828;
+}
+
+.app-sider {
+  border-right: 1px solid #edf1f7;
+  padding: 0;
+}
+
+.brand-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #101828;
+}
+
+.side-section-label {
+  padding: 0 24px 12px;
+  font-size: 12px;
+  color: #98a2b3;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sider-footer-card {
+  margin: auto 16px 0;
+  padding: 18px;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.04);
+}
+
+.app-header {
+  height: 64px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid #edf1f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(14px);
+}
+
+.app-content {
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(22, 119, 255, 0.06), transparent 26%),
+    linear-gradient(180deg, #f6f8fc 0%, #f5f7fb 100%);
+}
+
+.user-trigger {
+  height: auto;
+  padding: 6px 8px !important;
+  border-radius: 14px;
+  border: 1px solid #edf2f7;
+  background: #ffffff;
+}
+
+.user-name-text {
+  font-weight: 600;
+  color: #101828;
+}
+
+.user-sub-text {
+  font-size: 12px;
+  color: #98a2b3;
+}
+
+.page-card,
+.stat-card-ui {
+  border: 1px solid #eef2f7 !important;
+  box-shadow: 0 16px 44px rgba(16, 24, 40, 0.04) !important;
+}
+
+.info-tile {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+  border: 1px solid #edf2f7;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at left top, rgba(22, 119, 255, 0.14), transparent 28%),
+    radial-gradient(circle at right bottom, rgba(105, 177, 255, 0.12), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f6f8fc 100%);
+}
+
+.login-copy {
+  padding: 36px 12px 36px 0;
+}
+
+.brand-pill {
+  display: inline-flex;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #1677ff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.login-description {
+  font-size: 17px;
+  color: #667085;
+  max-width: 640px;
+  margin-bottom: 24px !important;
+}
+
+.feature-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e8eef8;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.04);
+}
+
+.login-card {
+  border-radius: 30px !important;
+  border: 1px solid #edf2f7 !important;
+  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.08) !important;
+}
+
+.login-ornament {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: 0.35;
+}
+
+.login-ornament-left {
+  top: -120px;
+  left: -80px;
+  background: #dcecff;
+}
+
+.login-ornament-right {
+  bottom: -150px;
+  right: -80px;
+  background: #eef6ff;
+}
+
+.code-preview,
+.token-box {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #fbfcff;
+  border: 1px solid #edf2f7;
+}
+
+.auth-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  border: 1px solid #e4eefc;
+  color: #175cd3;
+}
+
+.detail-block {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fafcff;
+  border: 1px solid #edf2f7;
+}
+
+.code-preview {
+  white-space: pre-wrap;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.token-text {
+  margin: 8px 0 0 !important;
+  word-break: break-all;
+}
+
+@media (max-width: 1200px) {
+  .app-header {
+    height: auto;
+    align-items: flex-start;
+    gap: 16px;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 992px) {
+  .login-copy {
+    padding-right: 0;
+    margin-bottom: 20px;
+  }
+}

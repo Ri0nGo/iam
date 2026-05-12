@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IAM 身份与访问管理</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brand: #3B5BDB;
+  --brand-light: #EDF2FF;
+  --brand-mid: #748FFC;
+  --bg: #F8F9FC;
+  --surface: #FFFFFF;
+  --surface2: #F1F3F9;
+  --border: #E8EAF0;
+  --border2: #D0D5E8;
+  --text: #1A1D2E;
+  --text2: #5A6080;
+  --text3: #9BA3BF;
+  --success: #2F9E44;
+  --success-bg: #EBFBEE;
+  --warn: #E67700;
+  --warn-bg: #FFF4E6;
+  --danger: #C92A2A;
+  --danger-bg: #FFF5F5;
+  --info-bg: #EDF2FF;
+  --shadow: 0 1px 3px rgba(26,29,46,.07), 0 4px 16px rgba(26,29,46,.05);
+  --shadow-lg: 0 8px 32px rgba(26,29,46,.12), 0 2px 8px rgba(26,29,46,.06);
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --sidebar-w: 230px;
+  --topbar-h: 56px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+button { font-family: var(--font); cursor: pointer; }
+input, select, textarea { font-family: var(--font); }
+
+/* ── Layout ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-brand {
+  height: var(--topbar-h);
+  padding: 0 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.brand-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-icon svg { width: 17px; height: 17px; fill: white; }
+.brand-name { font-size: 14.5px; font-weight: 600; letter-spacing: -.2px; }
+.brand-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+.nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+.nav-section-label {
+  font-size: 10.5px; font-weight: 600; color: var(--text3);
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 10px 10px 5px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; border-radius: 8px;
+  color: var(--text2); font-size: 13.5px; font-weight: 400;
+  cursor: pointer; transition: all .15s; margin-bottom: 1px;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--brand-light); color: var(--brand); font-weight: 500; }
+.nav-item.active svg { opacity: 1; }
+.nav-badge {
+  margin-left: auto; font-size: 11px; font-weight: 600;
+  background: var(--brand); color: white;
+  padding: 1px 7px; border-radius: 20px; min-width: 20px; text-align: center;
+}
+.nav-item.active .nav-badge { background: var(--brand); }
+
+.sidebar-footer {
+  padding: 12px 10px;
+  border-top: 1px solid var(--border);
+}
+.user-card {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; border-radius: 8px;
+  cursor: pointer; transition: background .15s;
+}
+.user-card:hover { background: var(--surface2); }
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--brand-light); color: var(--brand);
+  font-size: 11.5px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.avatar.sm { width: 26px; height: 26px; font-size: 10px; }
+.avatar.green { background: var(--success-bg); color: var(--success); }
+.avatar.orange { background: var(--warn-bg); color: var(--warn); }
+.avatar.red { background: var(--danger-bg); color: var(--danger); }
+.user-name { font-size: 13px; font-weight: 500; }
+.user-sub { font-size: 11px; color: var(--text3); }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* ── Topbar ── */
+.topbar {
+  height: var(--topbar-h); flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 22px; gap: 12px;
+}
+.topbar-title { font-size: 15px; font-weight: 600; flex: 1; letter-spacing: -.2px; }
+.search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0 12px; height: 34px; width: 210px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search:focus-within { border-color: var(--brand-mid); box-shadow: 0 0 0 3px rgba(59,91,219,.1); }
+.search svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--text3); }
+.search input { border: none; background: none; outline: none; font-size: 13px; color: var(--text); width: 100%; }
+.search input::placeholder { color: var(--text3); }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── Buttons ── */
+.btn {
+  height: 34px; padding: 0 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; border: 1px solid var(--border2);
+  background: var(--surface); color: var(--text);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .15s; white-space: nowrap;
+}
+.btn:hover { background: var(--surface2); border-color: var(--border2); }
+.btn:active { transform: scale(.98); }
+.btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.btn-primary { background: var(--brand); color: white; border-color: var(--brand); }
+.btn-primary:hover { background: #3451C7; border-color: #3451C7; }
+.btn-danger { background: var(--danger-bg); color: var(--danger); border-color: #FFC9C9; }
+.btn-danger:hover { background: #FFE3E3; }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+.btn-icon { width: 28px; height: 28px; padding: 0; justify-content: center; }
+
+/* ── Content ── */
+.content { flex: 1; overflow-y: auto; padding: 22px 24px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Stats ── */
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.stats-3 { grid-template-columns: repeat(3,1fr); }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px 18px;
+}
+.stat-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 8px; }
+.stat-value { font-size: 26px; font-weight: 600; letter-spacing: -.5px; line-height: 1; margin-bottom: 6px; }
+.stat-note { font-size: 11.5px; color: var(--text3); }
+.stat-note.up { color: var(--success); }
+.stat-note.warn { color: var(--warn); }
+
+/* ── Card ── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  margin-bottom: 16px;
+}
+.card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 14px; font-weight: 600; }
+.card-subtitle { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+/* ── Table ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 11.5px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 10px 16px; text-align: left;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  font-size: 13.5px; vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tbody tr { transition: background .12s; }
+tbody tr:hover td { background: #FAFBFF; }
+.td-check { width: 40px; }
+input[type="checkbox"] { accent-color: var(--brand); width: 15px; height: 15px; cursor: pointer; }
+
+/* ── Status ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 500; white-space: nowrap;
+}
+.badge::before { content:''; width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.badge-green { background: var(--success-bg); color: var(--success); }
+.badge-green::before { background: var(--success); }
+.badge-gray { background: var(--surface2); color: var(--text2); }
+.badge-gray::before { background: var(--text3); }
+.badge-red { background: var(--danger-bg); color: var(--danger); }
+.badge-red::before { background: var(--danger); }
+.badge-orange { background: var(--warn-bg); color: var(--warn); }
+.badge-orange::before { background: var(--warn); }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 5px;
+  font-size: 11.5px; font-weight: 500; margin: 1px 2px;
+  background: var(--brand-light); color: var(--brand);
+}
+.tag-green { background: var(--success-bg); color: var(--success); }
+.tag-orange { background: var(--warn-bg); color: var(--warn); }
+.tag-red { background: var(--danger-bg); color: var(--danger); }
+.tag-gray { background: var(--surface2); color: var(--text2); }
+
+/* ── Pagination ── */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 0; font-size: 12.5px; color: var(--text2);
+}
+.pages { display: flex; gap: 4px; }
+.page-btn {
+  min-width: 30px; height: 28px; padding: 0 8px;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text2);
+  font-size: 12.5px; font-family: var(--font);
+  cursor: pointer; transition: all .12s;
+  display: flex; align-items: center; justify-content: center;
+}
+.page-btn:hover { background: var(--surface2); color: var(--text); }
+.page-btn.active { background: var(--brand); color: white; border-color: var(--brand); }
+
+/* ── Roles grid ── */
+.roles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.role-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px;
+  transition: box-shadow .15s;
+}
+.role-card:hover { box-shadow: var(--shadow); }
+.role-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.role-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.role-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.role-desc { font-size: 12px; color: var(--text2); }
+.role-footer {
+  display: flex; gap: 14px; margin-top: 12px;
+  padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text2);
+}
+.role-footer span { color: var(--text); font-weight: 500; }
+
+/* ── Perm grid ── */
+.perm-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 16px; }
+.perm-item {
+  background: var(--surface2); border-radius: 8px;
+  padding: 9px 12px; display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px;
+}
+.perm-check {
+  width: 17px; height: 17px; border-radius: 5px;
+  background: var(--brand);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.perm-check svg { width: 10px; height: 10px; stroke: white; stroke-width: 2.5; fill: none; }
+.perm-deny { background: var(--surface2); border: 1px solid var(--border); }
+.perm-deny.perm-check { background: var(--surface2); }
+
+/* ── Action row ── */
+.action-row { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+/* ── Modal overlay ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,20,40,.45); z-index: 1000;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg); width: 520px; max-width: 95vw;
+  max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;
+  animation: modalIn .2s cubic-bezier(.34,1.4,.64,1);
+}
+.modal-lg { width: 660px; }
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close {
+  width: 30px; height: 30px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text2); transition: all .12s;
+}
+.modal-close:hover { background: var(--surface2); color: var(--text); }
+.modal-close svg { width: 14px; height: 14px; }
+.modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Form ── */
+.form-row { margin-bottom: 16px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+.required::after { content: ' *'; color: var(--danger); }
+input[type=text], input[type=email], input[type=password], select, textarea {
+  width: 100%; height: 36px;
+  border: 1px solid var(--border2); border-radius: 8px;
+  padding: 0 12px; font-size: 13.5px; color: var(--text);
+  background: var(--surface); outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+input[type=text]:focus, input[type=email]:focus, input[type=password]:focus,
+select:focus, textarea:focus {
+  border-color: var(--brand-mid); box-shadow: 0 0 0 3px rgba(59,91,219,.1);
+}
+textarea { height: 80px; padding: 9px 12px; resize: vertical; }
+select { -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239BA3BF' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+/* ── Confirm modal ── */
+.confirm-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.confirm-title { text-align: center; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.confirm-desc { text-align: center; font-size: 13.5px; color: var(--text2); line-height: 1.6; }
+
+/* ── Toast ── */
+.toast-wrap { position: fixed; bottom: 22px; right: 22px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--text); color: white; padding: 11px 16px;
+  border-radius: 10px; font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 9px;
+  box-shadow: var(--shadow-lg); min-width: 220px;
+  animation: toastIn .2s ease;
+}
+.toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+.toast.success { background: #1A3A24; }
+.toast.error { background: #3A1A1A; }
+@keyframes toastIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+/* ── Breadcrumb ── */
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); margin-bottom: 16px; }
+.breadcrumb a { color: var(--text3); text-decoration: none; }
+.breadcrumb a:hover { color: var(--brand); }
+.breadcrumb-sep { color: var(--border2); }
+.breadcrumb-cur { color: var(--text2); font-weight: 500; }
+
+/* ── Empty state ── */
+.empty {
+  padding: 50px 20px; text-align: center;
+}
+.empty svg { width: 40px; height: 40px; color: var(--text3); margin: 0 auto 12px; }
+.empty-title { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.empty-desc { font-size: 13px; color: var(--text2); }
+
+/* ── App page cards ── */
+.app-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+.app-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px;
+  transition: box-shadow .15s, border-color .15s;
+  cursor: pointer;
+}
+.app-card:hover { box-shadow: var(--shadow); border-color: var(--border2); }
+.app-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.app-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.app-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.app-url { font-size: 11.5px; color: var(--text3); font-family: var(--mono); }
+.app-meta { display: flex; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text2); }
+.app-meta span { color: var(--text); font-weight: 500; }
+
+/* ── Audit ── */
+.audit-tag { font-family: var(--mono); font-size: 11px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 4px; color: var(--text2); }
+.audit-tag.create { background: var(--success-bg); border-color: #B2F2BB; color: var(--success); }
+.audit-tag.update { background: var(--info-bg); border-color: #BAC8FF; color: var(--brand); }
+.audit-tag.delete { background: var(--danger-bg); border-color: #FFC9C9; color: var(--danger); }
+.audit-tag.login  { background: var(--warn-bg); border-color: #FFD8A8; color: var(--warn); }
+
+/* ── Bulk bar ── */
+.bulk-bar {
+  display: none; position: sticky; top: 0; z-index: 10;
+  background: var(--brand); color: white;
+  padding: 10px 18px; border-radius: var(--radius);
+  margin-bottom: 14px; align-items: center; gap: 12px;
+  font-size: 13.5px; font-weight: 500;
+}
+.bulk-bar.open { display: flex; }
+.bulk-bar-actions { margin-left: auto; display: flex; gap: 8px; }
+.bulk-btn {
+  height: 28px; padding: 0 12px; border-radius: 6px;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+  color: white; font-size: 12.5px; font-family: var(--font);
+  cursor: pointer; transition: background .12s;
+}
+.bulk-btn:hover { background: rgba(255,255,255,.25); }
+.bulk-btn.danger { background: rgba(201,42,42,.7); border-color: transparent; }
+.bulk-btn.danger:hover { background: rgba(201,42,42,.9); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm-2 10.4L5.6 10l1.4-1.4 1 1 4-4 1.4 1.4-5.4 5.4z"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">IAM Console</div>
+      <div class="brand-sub">身份与访问管理</div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section-label">核心管理</div>
+    <button class="nav-item active" onclick="nav('users',this)">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 1114 0H3z"/></svg>
+      用户管理
+      <span class="nav-badge" id="badge-users">0</span>
+    </button>
+    <button class="nav-item" onclick="nav('apps',this)">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+      应用管理
+      <span class="nav-badge" id="badge-apps">0</span>
+    </button>
+    <button class="nav-item" onclick="nav('roles',this)">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884zM18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+      角色管理
+      <span class="nav-badge" id="badge-roles">0</span>
+    </button>
+    <div class="nav-section-label" style="margin-top:8px">系统</div>
+    <button class="nav-item" onclick="nav('audit',this)">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 3a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"/></svg>
+      审计日志
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="avatar">SA</div>
+      <div>
+        <div class="user-name">Super Admin</div>
+        <div class="user-sub">超级管理员</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <header class="topbar">
+    <span class="topbar-title" id="page-title">用户管理</span>
+    <div class="search">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+      <input placeholder="搜索…" id="search-input" oninput="handleSearch(this.value)">
+    </div>
+    <div class="topbar-actions">
+      <button class="btn" onclick="exportData()">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 012 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg>
+        导出
+      </button>
+      <button class="btn btn-primary" id="main-add-btn" onclick="openAddModal()">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
+        新建用户
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── Users Page ── -->
+    <div class="page active" id="page-users">
+      <div class="breadcrumb">
+        <a href="#">首页</a><span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-cur">用户管理</span>
+      </div>
+      <div class="stats" id="user-stats"></div>
+      <div class="bulk-bar" id="user-bulk">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4h12v2H4zm0 5h12v2H4zm0 5h8v2H4z"/></svg>
+        <span id="bulk-count">已选 0 项</span>
+        <div class="bulk-bar-actions">
+          <button class="bulk-btn" onclick="bulkToggleStatus()">切换状态</button>
+          <button class="bulk-btn danger" onclick="bulkDelete()">批量删除</button>
+          <button class="bulk-btn" onclick="clearBulk()">取消</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">用户列表</div><div class="card-subtitle" id="user-list-sub"></div></div>
+          <div style="display:flex;gap:8px">
+            <select id="user-filter-status" onchange="renderUsers()" style="width:100px;height:30px;font-size:12px;border-radius:6px">
+              <option value="">全部状态</option>
+              <option value="active">活跃</option>
+              <option value="inactive">离线</option>
+              <option value="disabled">已禁用</option>
+            </select>
+            <select id="user-filter-role" onchange="renderUsers()" style="width:110px;height:30px;font-size:12px;border-radius:6px">
+              <option value="">全部角色</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="td-check"><input type="checkbox" id="select-all-users" onchange="toggleSelectAll(this)"></th>
+                <th>用户</th><th>邮箱</th><th>角色</th><th>所属应用</th>
+                <th>状态</th><th>最后登录</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="user-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="user-page-info"></span>
+          <div class="pages" id="user-pages"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Apps Page ── -->
+    <div class="page" id="page-apps">
+      <div class="breadcrumb">
+        <a href="#">首页</a><span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-cur">应用管理</span>
+      </div>
+      <div class="stats stats-3" id="app-stats"></div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">已接入应用</div><div class="card-subtitle" id="app-list-sub"></div></div>
+          <select id="app-filter-status" onchange="renderApps()" style="width:100px;height:30px;font-size:12px;border-radius:6px">
+            <option value="">全部状态</option>
+            <option value="online">正常</option>
+            <option value="maintenance">维护中</option>
+            <option value="offline">已下线</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>应用名称</th><th>类型</th><th>认证方式</th><th>授权用户</th>
+                <th>状态</th><th>创建时间</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="app-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="app-page-info"></span>
+          <div class="pages" id="app-pages"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Roles Page ── -->
+    <div class="page" id="page-roles">
+      <div class="breadcrumb">
+        <a href="#">首页</a><span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-cur">角色管理</span>
+      </div>
+      <div class="roles-grid" id="roles-grid"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="perm-panel-title">权限详情</div>
+        </div>
+        <div class="perm-grid" id="perm-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── Audit Page ── -->
+    <div class="page" id="page-audit">
+      <div class="breadcrumb">
+        <a href="#">首页</a><span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-cur">审计日志</span>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">操作记录</div><div class="card-subtitle" id="audit-sub">实时记录所有操作日志</div></div>
+          <div style="display:flex;gap:8px">
+            <select id="audit-filter" onchange="renderAudit()" style="width:110px;height:30px;font-size:12px;border-radius:6px">
+              <option value="">全部类型</option>
+              <option value="create">创建</option>
+              <option value="update">更新</option>
+              <option value="delete">删除</option>
+              <option value="login">登录</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>时间</th><th>操作者</th><th>事件</th><th>对象</th><th>IP</th><th>结果</th></tr></thead>
+            <tbody id="audit-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="audit-page-info"></span>
+          <div class="pages" id="audit-pages"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ MODALS ══ -->
+
+<!-- User Modal -->
+<div class="overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="user-modal-title">新建用户</span>
+      <button class="modal-close" onclick="closeModal('user-modal')">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div><label class="required">姓名</label><input type="text" id="u-name" placeholder="例：张伟"></div>
+        <div><label class="required">工号</label><input type="text" id="u-id" placeholder="例：USR-010"></div>
+      </div>
+      <div class="form-row"><label class="required">邮箱</label><input type="email" id="u-email" placeholder="user@corp.com"></div>
+      <div class="form-row-2">
+        <div>
+          <label class="required">角色</label>
+          <select id="u-role"></select>
+        </div>
+        <div>
+          <label>状态</label>
+          <select id="u-status">
+            <option value="active">活跃</option>
+            <option value="inactive">离线</option>
+            <option value="disabled">已禁用</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>授权应用</label>
+        <div id="u-apps-check" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px"></div>
+      </div>
+      <div class="form-row-2" id="u-pwd-row">
+        <div><label class="required">密码</label><input type="password" id="u-password" placeholder="至少8位"></div>
+        <div><label class="required">确认密码</label><input type="password" id="u-password2" placeholder="再次输入"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('user-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveUser()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- App Modal -->
+<div class="overlay" id="app-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="app-modal-title">接入新应用</span>
+      <button class="modal-close" onclick="closeModal('app-modal')">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div><label class="required">应用名称</label><input type="text" id="ap-name" placeholder="例：CRM 系统"></div>
+        <div><label class="required">域名</label><input type="text" id="ap-url" placeholder="crm.corp.com"></div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label class="required">应用类型</label>
+          <select id="ap-type">
+            <option>Web</option><option>SPA</option><option>Mobile</option><option>API</option>
+          </select>
+        </div>
+        <div>
+          <label class="required">认证方式</label>
+          <select id="ap-auth">
+            <option>OAuth 2.0</option><option>SAML 2.0</option><option>OIDC</option><option>LDAP</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label>状态</label>
+          <select id="ap-status">
+            <option value="online">正常</option>
+            <option value="maintenance">维护中</option>
+            <option value="offline">已下线</option>
+          </select>
+        </div>
+        <div><label>负责人</label><input type="text" id="ap-owner" placeholder="应用负责人姓名"></div>
+      </div>
+      <div class="form-row"><label>描述</label><textarea id="ap-desc" placeholder="简要描述应用用途…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('app-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveApp()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Role Modal -->
+<div class="overlay" id="role-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="role-modal-title">新建角色</span>
+      <button class="modal-close" onclick="closeModal('role-modal')">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div><label class="required">角色名称</label><input type="text" id="r-name" placeholder="例：数据分析师"></div>
+        <div>
+          <label>颜色主题</label>
+          <select id="r-color">
+            <option value="blue">蓝色（管理）</option>
+            <option value="green">绿色（分析）</option>
+            <option value="orange">橙色（运营）</option>
+            <option value="gray">灰色（只读）</option>
+            <option value="red">红色（高危）</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><label>描述</label><textarea id="r-desc" placeholder="描述此角色的职责范围…"></textarea></div>
+      <div class="form-row">
+        <label>权限配置</label>
+        <div id="r-perms-check" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('role-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveRole()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="overlay" id="confirm-modal">
+  <div class="modal" style="width:380px">
+    <div class="modal-body" style="padding:28px 28px 20px">
+      <div class="confirm-icon" id="confirm-icon" style="background:var(--danger-bg)">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="var(--danger)"><path d="M9 11V7h2v4H9zm0 2h2v2H9v-2zm1-11a9 9 0 100 18A9 9 0 0010 2z"/></svg>
+      </div>
+      <div class="confirm-title" id="confirm-title">确认删除？</div>
+      <div class="confirm-desc" id="confirm-desc">此操作不可撤销，确认继续？</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('confirm-modal')">取消</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+/* ═══════════════════════════════════════
+   DATA STORE
+═══════════════════════════════════════ */
+const ALL_PERMS = [
+  '用户-查看','用户-创建','用户-编辑','用户-删除',
+  '应用-查看','应用-接入','应用-配置','应用-删除',
+  '角色-查看','角色-管理',
+  '审计-查看','审计-导出',
+  '系统-设置'
+];
+
+let DB = {
+  roles: [
+    { id:'R1', name:'超级管理员', desc:'拥有全部系统权限', color:'blue', perms: ALL_PERMS.slice() },
+    { id:'R2', name:'数据分析师', desc:'数据查看与报表分析', color:'green', perms:['用户-查看','应用-查看','审计-查看','审计-导出'] },
+    { id:'R3', name:'运营专员',   desc:'业务运营相关权限',  color:'orange', perms:['用户-查看','应用-查看','用户-编辑'] },
+    { id:'R4', name:'访客',       desc:'仅限只读访问',      color:'gray', perms:['用户-查看','应用-查看'] },
+  ],
+  apps: [
+    { id:'A1', name:'CRM 系统',  url:'crm.corp.com',  type:'Web', auth:'OAuth 2.0', status:'online', owner:'张伟', desc:'客户关系管理', created:'2024-03-15' },
+    { id:'A2', name:'ERP 平台',  url:'erp.corp.com',  type:'Web', auth:'SAML 2.0',  status:'online', owner:'李明', desc:'企业资源规划', created:'2024-01-20' },
+    { id:'A3', name:'BI 系统',   url:'bi.corp.com',   type:'SPA', auth:'OIDC',       status:'online', owner:'王芳', desc:'商业智能分析', created:'2024-05-08' },
+    { id:'A4', name:'HR 门户',   url:'hr.corp.com',   type:'Web', auth:'OAuth 2.0',  status:'maintenance', owner:'陈静', desc:'人力资源管理', created:'2023-11-30' },
+    { id:'A5', name:'OA 系统',   url:'oa.corp.com',   type:'Web', auth:'LDAP',       status:'online', owner:'刘强', desc:'办公自动化', created:'2023-09-12' },
+  ],
+  users: [
+    { id:'USR-001', name:'张伟', email:'zhang.wei@corp.com',   role:'R1', apps:['A1','A2'], status:'active',   last:'2 分钟前' },
+    { id:'USR-002', name:'李明', email:'li.ming@corp.com',     role:'R2', apps:['A3'],      status:'active',   last:'1 小时前' },
+    { id:'USR-003', name:'王芳', email:'wang.fang@corp.com',   role:'R3', apps:['A1'],      status:'inactive', last:'昨天' },
+    { id:'USR-004', name:'陈静', email:'chen.jing@corp.com',   role:'R4', apps:['A5'],      status:'disabled', last:'3 天前' },
+    { id:'USR-005', name:'刘强', email:'liu.qiang@corp.com',   role:'R2', apps:['A1','A3'], status:'active',   last:'30 分钟前' },
+    { id:'USR-006', name:'赵梅', email:'zhao.mei@corp.com',    role:'R3', apps:['A2'],      status:'active',   last:'2 小时前' },
+    { id:'USR-007', name:'孙浩', email:'sun.hao@corp.com',     role:'R4', apps:['A5'],      status:'inactive', last:'1 周前' },
+    { id:'USR-008', name:'周琳', email:'zhou.lin@corp.com',    role:'R2', apps:['A3'],      status:'active',   last:'今天' },
+  ],
+  audit: [
+    { time:'2025-04-14 10:23', actor:'张伟',  type:'login',  obj:'系统登录',       ip:'192.168.1.1',  result:'success' },
+    { time:'2025-04-14 09:55', actor:'张伟',  type:'create', obj:'用户 USR-008',   ip:'192.168.1.1',  result:'success' },
+    { time:'2025-04-14 09:40', actor:'李明',  type:'update', obj:'角色 数据分析师', ip:'10.0.0.22',    result:'success' },
+    { time:'2025-04-14 09:12', actor:'张伟',  type:'delete', obj:'用户 USR-009',   ip:'192.168.1.1',  result:'success' },
+    { time:'2025-04-13 17:30', actor:'王芳',  type:'login',  obj:'系统登录',       ip:'10.0.0.15',    result:'success' },
+    { time:'2025-04-13 16:22', actor:'张伟',  type:'create', obj:'应用 OA 系统',   ip:'192.168.1.1',  result:'success' },
+    { time:'2025-04-13 15:05', actor:'陈静',  type:'login',  obj:'系统登录',       ip:'172.16.0.10',  result:'success' },
+    { time:'2025-04-12 11:00', actor:'系统',  type:'update', obj:'会话清理任务',    ip:'localhost',    result:'success' },
+  ]
+};
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let currentPage = 'users';
+const PAGE_SIZE = 6;
+let pages = { users:1, apps:1, audit:1 };
+let editingId = null;
+let selectedUsers = new Set();
+let searchQuery = '';
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+const PAGE_META = {
+  users: { title:'用户管理', btn:'新建用户' },
+  apps:  { title:'应用管理', btn:'接入应用' },
+  roles: { title:'角色管理', btn:'新建角色' },
+  audit: { title:'审计日志', btn:null }
+};
+
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  currentPage = id;
+  searchQuery = '';
+  document.getElementById('search-input').value = '';
+  const meta = PAGE_META[id];
+  document.getElementById('page-title').textContent = meta.title;
+  const btn = document.getElementById('main-add-btn');
+  if (meta.btn) { btn.style.display=''; btn.lastChild.textContent = meta.btn; }
+  else btn.style.display = 'none';
+  pages[id] = 1;
+  refreshAll();
+}
+
+function openAddModal() {
+  const p = currentPage;
+  if (p==='users') openUserModal();
+  else if (p==='apps') openAppModal();
+  else if (p==='roles') openRoleModal();
+}
+
+/* ═══════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════ */
+function handleSearch(v) {
+  searchQuery = v.toLowerCase();
+  pages[currentPage] = 1;
+  refreshAll();
+}
+
+/* ═══════════════════════════════════════
+   RENDER USERS
+═══════════════════════════════════════ */
+function filteredUsers() {
+  const sf = document.getElementById('user-filter-status').value;
+  const rf = document.getElementById('user-filter-role').value;
+  return DB.users.filter(u => {
+    if (sf && u.status !== sf) return false;
+    if (rf && u.role !== rf) return false;
+    if (searchQuery && !u.name.toLowerCase().includes(searchQuery) && !u.email.toLowerCase().includes(searchQuery) && !u.id.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+}
+
+function renderUsers() {
+  // populate role filter
+  const rf = document.getElementById('user-filter-role');
+  const cur = rf.value;
+  rf.innerHTML = '<option value="">全部角色</option>';
+  DB.roles.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.name; rf.appendChild(o); });
+  rf.value = cur;
+
+  const users = filteredUsers();
+  const total = users.length;
+  const p = pages.users;
+  const slice = users.slice((p-1)*PAGE_SIZE, p*PAGE_SIZE);
+
+  const STATUS = {
+    active: '<span class="badge badge-green">活跃</span>',
+    inactive: '<span class="badge badge-gray">离线</span>',
+    disabled: '<span class="badge badge-red">已禁用</span>'
+  };
+  const AVATARCOLOR = { R1:'', R2:'green', R3:'orange', R4:'red' };
+
+  const tbody = document.getElementById('user-tbody');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-title">暂无用户</div><div class="empty-desc">点击右上角"新建用户"开始添加</div></div></td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(u => {
+      const role = DB.roles.find(r=>r.id===u.role);
+      const apps = u.apps.map(a=>{ const ap=DB.apps.find(x=>x.id===a); return ap?`<span class="tag tag-green">${ap.name}</span>`:''; }).join('');
+      const initials = u.name.slice(0,2);
+      const ac = AVATARCOLOR[u.role]||'';
+      return `<tr>
+        <td class="td-check"><input type="checkbox" class="user-check" value="${u.id}" ${selectedUsers.has(u.id)?'checked':''} onchange="toggleUserSelect('${u.id}',this)"></td>
+        <td><div style="display:flex;align-items:center;gap:9px">
+          <div class="avatar sm ${ac}">${initials}</div>
+          <div><div style="font-weight:500">${u.name}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${u.id}</div></div>
+        </div></td>
+        <td style="color:var(--text2)">${u.email}</td>
+        <td><span class="tag">${role?role.name:u.role}</span></td>
+        <td>${apps||'<span style="color:var(--text3);font-size:12px">—</span>'}</td>
+        <td>${STATUS[u.status]||u.status}</td>
+        <td style="color:var(--text3);font-size:12px">${u.last}</td>
+        <td><div class="action-row">
+          <button class="btn btn-sm" onclick="openUserModal('${u.id}')">编辑</button>
+          <button class="btn btn-sm" onclick="resetPwd('${u.id}')">重置密码</button>
+          <button class="btn btn-sm" style="color:var(--danger);border-color:#FFC9C9" onclick="confirmDelete('user','${u.id}','${u.name}')">删除</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('user-list-sub').textContent = `共 ${total} 名用户`;
+  document.getElementById('user-page-info').textContent = `共 ${total} 条`;
+  renderPagination('user-pages', total, p, 'users');
+
+  // stats
+  const active = DB.users.filter(u=>u.status==='active').length;
+  const disabled = DB.users.filter(u=>u.status==='disabled').length;
+  const inactive = DB.users.filter(u=>u.status==='inactive').length;
+  document.getElementById('user-stats').innerHTML = `
+    ${sc('总用户数', DB.users.length, '','全部账号')}
+    ${sc('活跃用户', active, 'up', `在线率 ${Math.round(active/DB.users.length*100)}%`)}
+    ${sc('已禁用', disabled, disabled?'warn':'', '需要关注')}
+    ${sc('离线用户', inactive, 'neutral', '最近未登录')}
+  `;
+  document.getElementById('badge-users').textContent = DB.users.length;
+
+  // bulk bar
+  updateBulkBar();
+}
+
+/* ═══════════════════════════════════════
+   RENDER APPS
+═══════════════════════════════════════ */
+function filteredApps() {
+  const sf = document.getElementById('app-filter-status').value;
+  return DB.apps.filter(a => {
+    if (sf && a.status !== sf) return false;
+    if (searchQuery && !a.name.toLowerCase().includes(searchQuery) && !a.url.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+}
+
+function renderApps() {
+  const apps = filteredApps();
+  const total = apps.length;
+  const p = pages.apps;
+  const slice = apps.slice((p-1)*PAGE_SIZE, p*PAGE_SIZE);
+
+  const ACOLORS = {A1:'#EEF2FF:#3B5BDB',A2:'#EBFBEE:#2F9E44',A3:'#FFF4E6:#E67700',A4:'#FFF5F5:#C92A2A',A5:'#F3F4F6:#6B7280'};
+  const STATUS_APP = {
+    online: '<span class="badge badge-green">正常</span>',
+    maintenance: '<span class="badge badge-orange">维护中</span>',
+    offline: '<span class="badge badge-red">已下线</span>'
+  };
+
+  const tbody = document.getElementById('app-tbody');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-title">暂无应用</div><div class="empty-desc">点击右上角接入应用</div></div></td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(a => {
+      const ic = a.id in ACOLORS ? ACOLORS[a.id].split(':') : ['#F3F4F6','#6B7280'];
+      const userCount = DB.users.filter(u=>u.apps.includes(a.id)).length;
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:9px;background:${ic[0]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${ic[1]};flex-shrink:0">${a.name[0]}</div>
+          <div><div style="font-weight:500">${a.name}</div><div style="font-size:11.5px;color:var(--text3);font-family:var(--mono)">${a.url}</div></div>
+        </div></td>
+        <td><span class="tag tag-gray">${a.type}</span></td>
+        <td><span class="tag tag-orange">${a.auth}</span></td>
+        <td style="font-weight:500">${userCount} 人</td>
+        <td>${STATUS_APP[a.status]||a.status}</td>
+        <td style="color:var(--text3);font-size:12px">${a.created}</td>
+        <td><div class="action-row">
+          <button class="btn btn-sm" onclick="openAppModal('${a.id}')">配置</button>
+          <button class="btn btn-sm" style="color:var(--danger);border-color:#FFC9C9" onclick="confirmDelete('app','${a.id}','${a.name}')">删除</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('app-list-sub').textContent = `共 ${total} 个应用`;
+  document.getElementById('app-page-info').textContent = `共 ${total} 条`;
+  renderPagination('app-pages', total, p, 'apps');
+
+  const online = DB.apps.filter(a=>a.status==='online').length;
+  const maint = DB.apps.filter(a=>a.status==='maintenance').length;
+  document.getElementById('app-stats').innerHTML = `
+    ${sc('已接入应用', DB.apps.length, '', '全部应用')}
+    ${sc('正常运行', online, 'up', '服务健康')}
+    ${sc('维护中', maint, maint?'warn':'', maint?'需要关注':'无维护')}
+  `;
+  document.getElementById('badge-apps').textContent = DB.apps.length;
+}
+
+/* ═══════════════════════════════════════
+   RENDER ROLES
+═══════════════════════════════════════ */
+const ROLE_COLORS = {
+  blue:   { bg:'#EEF2FF', iconBg:'#EEF2FF', fg:'#3B5BDB' },
+  green:  { bg:'#EBFBEE', iconBg:'#EBFBEE', fg:'#2F9E44' },
+  orange: { bg:'#FFF4E6', iconBg:'#FFF4E6', fg:'#E67700' },
+  gray:   { bg:'#F3F4F6', iconBg:'#F3F4F6', fg:'#6B7280' },
+  red:    { bg:'#FFF5F5', iconBg:'#FFF5F5', fg:'#C92A2A' },
+};
+
+let activeRoleId = null;
+
+function renderRoles() {
+  document.getElementById('badge-roles').textContent = DB.roles.length;
+  const grid = document.getElementById('roles-grid');
+  grid.innerHTML = DB.roles.map(r => {
+    const c = ROLE_COLORS[r.color]||ROLE_COLORS.blue;
+    const memberCount = DB.users.filter(u=>u.role===r.id).length;
+    const isActive = r.id === (activeRoleId||DB.roles[0].id);
+    return `<div class="role-card" style="${isActive?'border-color:var(--brand-mid);box-shadow:0 0 0 3px rgba(59,91,219,.09);':''}" onclick="selectRole('${r.id}')">
+      <div class="role-top">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="role-icon" style="background:${c.iconBg}">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="${c.fg}"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/></svg>
+          </div>
+          <div><div class="role-name">${r.name}</div><div class="role-desc">${r.desc}</div></div>
+        </div>
+        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+          <button class="btn btn-sm" onclick="openRoleModal('${r.id}')">编辑</button>
+          <button class="btn btn-sm" style="color:var(--danger);border-color:#FFC9C9" onclick="confirmDelete('role','${r.id}','${r.name}')">删除</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+        ${r.perms.slice(0,6).map(p=>`<span class="tag" style="background:${c.bg};color:${c.fg}">${p}</span>`).join('')}
+        ${r.perms.length>6?`<span class="tag tag-gray">+${r.perms.length-6}</span>`:''}
+      </div>
+      <div class="role-footer">
+        <div>成员 <span>${memberCount} 人</span></div>
+        <div>权限 <span>${r.perms.length===ALL_PERMS.length?'全部':r.perms.length+' 项'}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (!activeRoleId && DB.roles.length) activeRoleId = DB.roles[0].id;
+  renderPermPanel();
+}
+
+function selectRole(id) { activeRoleId = id; renderRoles(); }
+
+function renderPermPanel() {
+  const role = DB.roles.find(r=>r.id===activeRoleId);
+  if (!role) return;
+  document.getElementById('perm-panel-title').textContent = `${role.name} — 权限详情`;
+  document.getElementById('perm-grid').innerHTML = ALL_PERMS.map(p => {
+    const has = role.perms.includes(p);
+    return `<div class="perm-item">
+      <div class="perm-check" style="${has?'':'background:var(--surface);border:1px solid var(--border2)'}">
+        ${has?`<svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2.5" fill="none"/></svg>`:''}
+      </div>
+      <span style="color:${has?'var(--text)':'var(--text3)'}">${p}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   RENDER AUDIT
+═══════════════════════════════════════ */
+function renderAudit() {
+  const tf = document.getElementById('audit-filter').value;
+  let logs = DB.audit.filter(l => {
+    if (tf && l.type !== tf) return false;
+    if (searchQuery && !l.actor.toLowerCase().includes(searchQuery) && !l.obj.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+  const total = logs.length;
+  const p = pages.audit||1;
+  const slice = logs.slice((p-1)*PAGE_SIZE, p*PAGE_SIZE);
+
+  const TYPE_MAP = { create:'create 创建', update:'update 更新', delete:'delete 删除', login:'login 登录' };
+  document.getElementById('audit-tbody').innerHTML = slice.map(l =>
+    `<tr>
+      <td style="font-size:12px;color:var(--text3);font-family:var(--mono)">${l.time}</td>
+      <td style="font-weight:500">${l.actor}</td>
+      <td><span class="audit-tag ${l.type}">${TYPE_MAP[l.type]||l.type}</span></td>
+      <td style="color:var(--text2)">${l.obj}</td>
+      <td style="font-size:12px;font-family:var(--mono);color:var(--text3)">${l.ip}</td>
+      <td><span class="badge badge-green">成功</span></td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('audit-page-info').textContent = `共 ${total} 条`;
+  renderPagination('audit-pages', total, p, 'audit');
+}
+
+/* ═══════════════════════════════════════
+   STAT CARD HELPER
+═══════════════════════════════════════ */
+function sc(label, value, cls, note) {
+  return `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value">${value}</div><div class="stat-note ${cls||''}">${note}</div></div>`;
+}
+
+/* ═══════════════════════════════════════
+   PAGINATION
+═══════════════════════════════════════ */
+function renderPagination(containerId, total, current, key) {
+  const totalPages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  const c = document.getElementById(containerId);
+  let html = `<button class="page-btn" ${current<=1?'disabled':''} onclick="goPage('${key}',${current-1})">‹</button>`;
+  for (let i=1;i<=totalPages;i++) {
+    if (totalPages>7 && i>2 && i<totalPages-1 && Math.abs(i-current)>1) {
+      if (i===3||i===totalPages-2) html+=`<span style="padding:0 4px;color:var(--text3);font-size:12px">…</span>`;
+      continue;
+    }
+    html+=`<button class="page-btn ${i===current?'active':''}" onclick="goPage('${key}',${i})">${i}</button>`;
+  }
+  html+=`<button class="page-btn" ${current>=totalPages?'disabled':''} onclick="goPage('${key}',${current+1})">›</button>`;
+  c.innerHTML = html;
+}
+
+function goPage(key, p) {
+  pages[key] = p;
+  if (key==='users') renderUsers();
+  else if (key==='apps') renderApps();
+  else if (key==='audit') renderAudit();
+}
+
+/* ═══════════════════════════════════════
+   USER MODAL
+═══════════════════════════════════════ */
+function openUserModal(id) {
+  editingId = id||null;
+  document.getElementById('user-modal-title').textContent = id ? '编辑用户' : '新建用户';
+  document.getElementById('u-pwd-row').style.display = id ? 'none' : '';
+
+  // populate role dropdown
+  const rs = document.getElementById('u-role');
+  rs.innerHTML = DB.roles.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+
+  // populate apps checkboxes
+  const ac = document.getElementById('u-apps-check');
+  ac.innerHTML = DB.apps.map(a=>
+    `<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;background:var(--surface2);padding:5px 10px;border-radius:7px;border:1px solid var(--border)">
+      <input type="checkbox" value="${a.id}" style="margin:0"> ${a.name}
+    </label>`
+  ).join('');
+
+  if (id) {
+    const u = DB.users.find(x=>x.id===id);
+    document.getElementById('u-name').value = u.name;
+    document.getElementById('u-id').value = u.id;
+    document.getElementById('u-email').value = u.email;
+    document.getElementById('u-role').value = u.role;
+    document.getElementById('u-status').value = u.status;
+    ac.querySelectorAll('input').forEach(cb => { cb.checked = u.apps.includes(cb.value); });
+  } else {
+    ['u-name','u-id','u-email','u-password','u-password2'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('u-status').value='active';
+  }
+  openModal('user-modal');
+}
+
+function saveUser() {
+  const name = document.getElementById('u-name').value.trim();
+  const uid = document.getElementById('u-id').value.trim();
+  const email = document.getElementById('u-email').value.trim();
+  const role = document.getElementById('u-role').value;
+  const status = document.getElementById('u-status').value;
+  const apps = [...document.querySelectorAll('#u-apps-check input:checked')].map(c=>c.value);
+  const pwd = document.getElementById('u-password').value;
+  const pwd2 = document.getElementById('u-password2').value;
+
+  if (!name||!uid||!email||!role) { toast('请填写必填字段','error'); return; }
+  if (!editingId && pwd !== pwd2) { toast('两次密码不一致','error'); return; }
+  if (!editingId && pwd.length < 8) { toast('密码至少8位','error'); return; }
+
+  if (editingId) {
+    const u = DB.users.find(x=>x.id===editingId);
+    Object.assign(u, { name, email, role, status, apps, last:'刚刚' });
+    addAudit('update', `用户 ${name}`);
+    toast(`用户"${name}"已更新`,'success');
+  } else {
+    if (DB.users.find(u=>u.id===uid)) { toast('工号已存在','error'); return; }
+    DB.users.push({ id:uid, name, email, role, apps, status, last:'刚刚' });
+    addAudit('create', `用户 ${name}`);
+    toast(`用户"${name}"已创建`,'success');
+  }
+  closeModal('user-modal');
+  renderUsers();
+}
+
+/* ═══════════════════════════════════════
+   APP MODAL
+═══════════════════════════════════════ */
+function openAppModal(id) {
+  editingId = id||null;
+  document.getElementById('app-modal-title').textContent = id ? '配置应用' : '接入新应用';
+  if (id) {
+    const a = DB.apps.find(x=>x.id===id);
+    document.getElementById('ap-name').value = a.name;
+    document.getElementById('ap-url').value = a.url;
+    document.getElementById('ap-type').value = a.type;
+    document.getElementById('ap-auth').value = a.auth;
+    document.getElementById('ap-status').value = a.status;
+    document.getElementById('ap-owner').value = a.owner||'';
+    document.getElementById('ap-desc').value = a.desc||'';
+  } else {
+    ['ap-name','ap-url','ap-owner','ap-desc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('ap-status').value='online';
+  }
+  openModal('app-modal');
+}
+
+function saveApp() {
+  const name = document.getElementById('ap-name').value.trim();
+  const url = document.getElementById('ap-url').value.trim();
+  const type = document.getElementById('ap-type').value;
+  const auth = document.getElementById('ap-auth').value;
+  const status = document.getElementById('ap-status').value;
+  const owner = document.getElementById('ap-owner').value.trim();
+  const desc = document.getElementById('ap-desc').value.trim();
+  if (!name||!url) { toast('请填写应用名称和域名','error'); return; }
+
+  const today = new Date().toISOString().slice(0,10);
+  if (editingId) {
+    const a = DB.apps.find(x=>x.id===editingId);
+    Object.assign(a, { name, url, type, auth, status, owner, desc });
+    addAudit('update', `应用 ${name}`);
+    toast(`应用"${name}"已更新`,'success');
+  } else {
+    const id = 'A'+(Date.now()%10000);
+    DB.apps.push({ id, name, url, type, auth, status, owner, desc, created:today });
+    addAudit('create', `应用 ${name}`);
+    toast(`应用"${name}"已接入`,'success');
+  }
+  closeModal('app-modal');
+  renderApps();
+}
+
+/* ═══════════════════════════════════════
+   ROLE MODAL
+═══════════════════════════════════════ */
+function openRoleModal(id) {
+  editingId = id||null;
+  document.getElementById('role-modal-title').textContent = id ? '编辑角色' : '新建角色';
+
+  const pc = document.getElementById('r-perms-check');
+  pc.innerHTML = ALL_PERMS.map(p =>
+    `<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;background:var(--surface2);padding:7px 10px;border-radius:7px;border:1px solid var(--border)">
+      <input type="checkbox" value="${p}" style="margin:0"> ${p}
+    </label>`
+  ).join('');
+
+  if (id) {
+    const r = DB.roles.find(x=>x.id===id);
+    document.getElementById('r-name').value = r.name;
+    document.getElementById('r-desc').value = r.desc;
+    document.getElementById('r-color').value = r.color;
+    pc.querySelectorAll('input').forEach(cb => { cb.checked = r.perms.includes(cb.value); });
+  } else {
+    ['r-name','r-desc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('r-color').value = 'blue';
+  }
+  openModal('role-modal');
+}
+
+function saveRole() {
+  const name = document.getElementById('r-name').value.trim();
+  const desc = document.getElementById('r-desc').value.trim();
+  const color = document.getElementById('r-color').value;
+  const perms = [...document.querySelectorAll('#r-perms-check input:checked')].map(c=>c.value);
+  if (!name) { toast('请填写角色名称','error'); return; }
+
+  if (editingId) {
+    const r = DB.roles.find(x=>x.id===editingId);
+    Object.assign(r, { name, desc, color, perms });
+    addAudit('update', `角色 ${name}`);
+    toast(`角色"${name}"已更新`,'success');
+  } else {
+    const id = 'R'+(Date.now()%10000);
+    DB.roles.push({ id, name, desc, color, perms });
+    activeRoleId = id;
+    addAudit('create', `角色 ${name}`);
+    toast(`角色"${name}"已创建`,'success');
+  }
+  closeModal('role-modal');
+  renderRoles();
+  renderUsers();
+}
+
+/* ═══════════════════════════════════════
+   DELETE / CONFIRM
+═══════════════════════════════════════ */
+function confirmDelete(type, id, name) {
+  const descMap = {
+    user: `确认删除用户"${name}"？此操作不可撤销，该用户将立即失去所有访问权限。`,
+    app: `确认删除应用"${name}"？关联的用户权限将同步移除。`,
+    role: `确认删除角色"${name}"？拥有该角色的用户将失去相关权限，请谨慎操作。`
+  };
+  document.getElementById('confirm-title').textContent = `删除${type==='user'?'用户':type==='app'?'应用':'角色'}`;
+  document.getElementById('confirm-desc').textContent = descMap[type];
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.onclick = () => doDelete(type, id, name);
+  openModal('confirm-modal');
+}
+
+function doDelete(type, id, name) {
+  if (type==='user') {
+    DB.users = DB.users.filter(u=>u.id!==id);
+    addAudit('delete', `用户 ${name}`);
+    selectedUsers.delete(id);
+    renderUsers();
+  } else if (type==='app') {
+    DB.apps = DB.apps.filter(a=>a.id!==id);
+    DB.users.forEach(u=>{ u.apps = u.apps.filter(a=>a!==id); });
+    addAudit('delete', `应用 ${name}`);
+    renderApps();
+    renderUsers();
+  } else if (type==='role') {
+    if (DB.users.some(u=>u.role===id)) { toast('该角色下还有用户，无法删除','error'); closeModal('confirm-modal'); return; }
+    DB.roles = DB.roles.filter(r=>r.id!==id);
+    if (activeRoleId===id) activeRoleId = DB.roles[0]?.id||null;
+    addAudit('delete', `角色 ${name}`);
+    renderRoles();
+    renderUsers();
+  }
+  closeModal('confirm-modal');
+  toast(`"${name}"已删除`,'success');
+}
+
+/* ═══════════════════════════════════════
+   RESET PASSWORD
+═══════════════════════════════════════ */
+function resetPwd(id) {
+  const u = DB.users.find(x=>x.id===id);
+  addAudit('update', `密码重置 ${u.name}`);
+  toast(`已向 ${u.email} 发送密码重置邮件`,'success');
+}
+
+/* ═══════════════════════════════════════
+   BULK OPERATIONS
+═══════════════════════════════════════ */
+function toggleUserSelect(id, cb) {
+  if (cb.checked) selectedUsers.add(id);
+  else selectedUsers.delete(id);
+  updateBulkBar();
+}
+
+function toggleSelectAll(cb) {
+  const filtered = filteredUsers();
+  const slice = filtered.slice((pages.users-1)*PAGE_SIZE, pages.users*PAGE_SIZE);
+  slice.forEach(u=>{ if(cb.checked) selectedUsers.add(u.id); else selectedUsers.delete(u.id); });
+  renderUsers();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('user-bulk');
+  if (selectedUsers.size>0) {
+    bar.classList.add('open');
+    document.getElementById('bulk-count').textContent = `已选 ${selectedUsers.size} 项`;
+  } else {
+    bar.classList.remove('open');
+  }
+  // sync checkboxes
+  document.querySelectorAll('.user-check').forEach(cb=>{
+    cb.checked = selectedUsers.has(cb.value);
+  });
+}
+
+function bulkToggleStatus() {
+  const ids = [...selectedUsers];
+  ids.forEach(id => {
+    const u = DB.users.find(x=>x.id===id);
+    if (u) u.status = u.status==='active'?'disabled':'active';
+  });
+  toast(`已批量切换 ${ids.length} 名用户状态`,'success');
+  addAudit('update',`批量状态变更 ${ids.length} 用户`);
+  clearBulk();
+  renderUsers();
+}
+
+function bulkDelete() {
+  const ids = [...selectedUsers];
+  DB.users = DB.users.filter(u=>!ids.includes(u.id));
+  addAudit('delete',`批量删除 ${ids.length} 用户`);
+  toast(`已删除 ${ids.length} 名用户`,'success');
+  clearBulk();
+  renderUsers();
+}
+
+function clearBulk() {
+  selectedUsers.clear();
+  updateBulkBar();
+  document.getElementById('select-all-users').checked=false;
+  document.querySelectorAll('.user-check').forEach(cb=>cb.checked=false);
+}
+
+/* ═══════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════ */
+function exportData() {
+  const p = currentPage;
+  let csv = '';
+  if (p==='users') {
+    csv = 'ID,姓名,邮箱,角色,状态,最后登录\n' +
+      DB.users.map(u=>{ const r=DB.roles.find(x=>x.id===u.role); return `${u.id},${u.name},${u.email},${r?r.name:''},${u.status},${u.last}`; }).join('\n');
+  } else if (p==='apps') {
+    csv = '名称,类型,认证方式,域名,状态\n' +
+      DB.apps.map(a=>`${a.name},${a.type},${a.auth},${a.url},${a.status}`).join('\n');
+  } else if (p==='audit') {
+    csv = '时间,操作者,事件,对象,IP\n' +
+      DB.audit.map(l=>`${l.time},${l.actor},${l.type},${l.obj},${l.ip}`).join('\n');
+  } else {
+    toast('当前页面暂不支持导出','error'); return;
+  }
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`iam-${p}-${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('导出成功','success');
+}
+
+/* ═══════════════════════════════════════
+   AUDIT HELPER
+═══════════════════════════════════════ */
+function addAudit(type, obj) {
+  const now = new Date();
+  const t = now.toISOString().slice(0,16).replace('T',' ');
+  DB.audit.unshift({ time:t, actor:'Super Admin', type, obj, ip:'192.168.1.1', result:'success' });
+}
+
+/* ═══════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════ */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); editingId=null; }
+
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) closeModal(o.id); });
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>closeModal(o.id)); });
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function toast(msg, type='') {
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<svg viewBox="0 0 20 20" fill="currentColor">${type==='success'?'<path d="M16.7 5.3a1 1 0 00-1.4 0L8 12.6 4.7 9.3a1 1 0 00-1.4 1.4l4 4a1 1 0 001.4 0l8-8a1 1 0 000-1.4z"/>':'<path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm-.75 4.75a.75.75 0 011.5 0v4.5a.75.75 0 01-1.5 0v-4.5zm.75 7.5a1 1 0 110 2 1 1 0 010-2z"/>'}</svg>${msg}`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(8px)'; el.style.transition='all .3s'; setTimeout(()=>el.remove(),300); },2800);
+}
+
+/* ═══════════════════════════════════════
+   REFRESH ALL
+═══════════════════════════════════════ */
+function refreshAll() {
+  renderUsers();
+  renderApps();
+  renderRoles();
+  renderAudit();
+}
+
+/* Init */
+refreshAll();
+</script>
+</body>
+</html>
