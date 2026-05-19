@@ -139,7 +139,7 @@ iam/
   cmd/
     server/
       main.go
-  configs/
+  config/
     config.yaml
   internal/
     bootstrap/
@@ -202,7 +202,7 @@ iam/
 
 ### 6.1 配置文件路径
 
-建议使用：`configs/config.yaml`
+建议使用：`config/config.yaml`
 
 ### 6.2 配置示例
 
@@ -249,7 +249,7 @@ oauth:
 
 建议规则：
 
-- 配置文件默认路径：`configs/config.yaml`
+- 配置文件默认路径：`config/config.yaml`
 - 环境变量前缀：`IAM`
 - 环境变量映射：`.` 转 `_`
 

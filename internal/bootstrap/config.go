@@ -63,7 +63,7 @@ func LoadConfig() (*Config, error) {
 	v := viper.New()
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
-	v.AddConfigPath("configs")
+	v.AddConfigPath("config")
 	v.SetEnvPrefix("IAM")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()

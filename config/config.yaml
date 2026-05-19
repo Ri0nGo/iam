@@ -34,4 +34,4 @@ security:
 oauth:
   authorize_code_expire_seconds: 300
   # 如果用户未登录，则跳转到前端登录页
-  login_url: http://localhost:3000/login
+  login_url: http://ubuntu:3000/login

@@ -418,7 +418,7 @@ OAuth2 客户端不再默认初始化，请在认证管理中按需创建。
 
 ## 配置说明
 
-当前默认配置已经按开发环境写入 `configs/config.yaml`：
+当前默认配置已经按开发环境写入 `config/config.yaml`：
 
 - MySQL: `ubuntu:3306`, `root/123456`, db 默认为 `iam`
 - Redis: `ubuntu:6379`, 密码为空, `db=3`
