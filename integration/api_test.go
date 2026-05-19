@@ -56,17 +56,17 @@ func TestAuthFlow(t *testing.T) {
 		t.Fatal("expected admin access token")
 	}
 
-	resp := s.doJSON(http.MethodGet, "/api/v1/auth/me", nil, login.AccessToken)
+	resp := s.doJSON(http.MethodGet, "/api/iam/auth/me", nil, login.AccessToken)
 	if resp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for /auth/me, got %d", resp.Code)
 	}
 
-	logoutResp := s.doJSON(http.MethodPost, "/api/v1/auth/logout", nil, login.AccessToken)
+	logoutResp := s.doJSON(http.MethodPost, "/api/iam/auth/logout", nil, login.AccessToken)
 	if logoutResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for logout, got %d", logoutResp.Code)
 	}
 
-	blockedResp := s.doJSON(http.MethodGet, "/api/v1/auth/me", nil, login.AccessToken)
+	blockedResp := s.doJSON(http.MethodGet, "/api/iam/auth/me", nil, login.AccessToken)
 	if blockedResp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401 after logout, got %d", blockedResp.Code)
 	}
@@ -78,7 +78,7 @@ func TestOAuth2Flow(t *testing.T) {
 
 	login := s.loginAsAdmin()
 
-	authorizeResp := s.doJSON(http.MethodGet, "/api/v1/oauth/authorize?response_type=code&client_id=system-a&redirect_uri=http://system-a.local/callback&state=xyz&scope=basic", nil, login.AccessToken)
+	authorizeResp := s.doJSON(http.MethodGet, "/api/iam/oauth/authorize?response_type=code&client_id=system-a&redirect_uri=http://system-a.local/callback&state=xyz&scope=basic", nil, login.AccessToken)
 	if authorizeResp.Code != http.StatusFound {
 		t.Fatalf("expected 302 for oauth authorize, got %d", authorizeResp.Code)
 	}
@@ -92,7 +92,7 @@ func TestOAuth2Flow(t *testing.T) {
 		t.Fatal("expected authorization code")
 	}
 
-	tokenURL := "/api/v1/oauth/token?client_id=system-a&secret=system-a-secret&grant_type=authorization_code&code=" + url.QueryEscape(code)
+	tokenURL := "/api/iam/oauth/token?client_id=system-a&secret=system-a-secret&grant_type=authorization_code&code=" + url.QueryEscape(code)
 	tokenResp := s.doJSON(http.MethodGet, tokenURL, nil, "")
 	if tokenResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for oauth token, got %d body=%s", tokenResp.Code, tokenResp.Body.String())
@@ -109,20 +109,20 @@ func TestOAuth2Flow(t *testing.T) {
 		t.Fatalf("expected openid ou_admin from oauth token endpoint, got %q", tokenData.OpenID)
 	}
 
-	loginTokenUserinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(login.AccessToken), nil, "")
+	loginTokenUserinfoResp := s.doJSON(http.MethodGet, "/api/iam/oauth/userinfo?access_token="+url.QueryEscape(login.AccessToken), nil, "")
 	if loginTokenUserinfoResp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected login token to be rejected by oauth userinfo, got %d", loginTokenUserinfoResp.Code)
 	}
 
-	userinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(tokenData.AccessToken)+"&openid="+url.QueryEscape(tokenData.OpenID), nil, "")
+	userinfoResp := s.doJSON(http.MethodGet, "/api/iam/oauth/userinfo?access_token="+url.QueryEscape(tokenData.AccessToken)+"&openid="+url.QueryEscape(tokenData.OpenID), nil, "")
 	if userinfoResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for oauth userinfo, got %d", userinfoResp.Code)
 	}
-	checkResp := s.doJSON(http.MethodGet, "/api/v1/oauth/auth?access_token="+url.QueryEscape(tokenData.AccessToken)+"&openid="+url.QueryEscape(tokenData.OpenID), nil, "")
+	checkResp := s.doJSON(http.MethodGet, "/api/iam/oauth/auth?access_token="+url.QueryEscape(tokenData.AccessToken)+"&openid="+url.QueryEscape(tokenData.OpenID), nil, "")
 	if checkResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for oauth auth, got %d body=%s", checkResp.Code, checkResp.Body.String())
 	}
-	refreshResp := s.doJSON(http.MethodGet, "/api/v1/oauth/refresh_token?client_id=system-a&grant_type=refresh_token&refresh_token="+url.QueryEscape(tokenData.RefreshToken), nil, "")
+	refreshResp := s.doJSON(http.MethodGet, "/api/iam/oauth/refresh_token?client_id=system-a&grant_type=refresh_token&refresh_token="+url.QueryEscape(tokenData.RefreshToken), nil, "")
 	if refreshResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for oauth refresh_token, got %d body=%s", refreshResp.Code, refreshResp.Body.String())
 	}
@@ -139,7 +139,7 @@ func TestUserAndRoleManagementFlow(t *testing.T) {
 
 	admin := s.loginAsAdmin()
 
-	roleResp := s.doJSON(http.MethodPost, "/api/v1/roles", map[string]any{
+	roleResp := s.doJSON(http.MethodPost, "/api/iam/roles", map[string]any{
 		"code":   "operator",
 		"name":   "运营角色",
 		"remark": "业务运营",
@@ -148,7 +148,7 @@ func TestUserAndRoleManagementFlow(t *testing.T) {
 		t.Fatalf("expected 200 for create role, got %d body=%s", roleResp.Code, roleResp.Body.String())
 	}
 
-	createUserResp := s.doJSON(http.MethodPost, "/api/v1/users", map[string]any{
+	createUserResp := s.doJSON(http.MethodPost, "/api/iam/users", map[string]any{
 		"username":     "alice",
 		"password":     "123456",
 		"display_name": "Alice",
@@ -169,38 +169,38 @@ func TestUserAndRoleManagementFlow(t *testing.T) {
 		t.Fatal("expected created user id")
 	}
 
-	listResp := s.doJSON(http.MethodGet, "/api/v1/users?keyword=alice", nil, admin.AccessToken)
+	listResp := s.doJSON(http.MethodGet, "/api/iam/users?keyword=alice", nil, admin.AccessToken)
 	if listResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for list users, got %d", listResp.Code)
 	}
 
-	rolesResp := s.doJSON(http.MethodGet, fmt.Sprintf("/api/v1/users/%d/roles", createdUser.ID), nil, admin.AccessToken)
+	rolesResp := s.doJSON(http.MethodGet, fmt.Sprintf("/api/iam/users/%d/roles", createdUser.ID), nil, admin.AccessToken)
 	if rolesResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for user roles, got %d", rolesResp.Code)
 	}
 
-	bindResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/v1/users/%d/roles", createdUser.ID), map[string]any{
+	bindResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/iam/users/%d/roles", createdUser.ID), map[string]any{
 		"role_codes": []string{"admin", "operator"},
 	}, admin.AccessToken)
 	if bindResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for bind roles, got %d", bindResp.Code)
 	}
 
-	statusResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/v1/users/%d/status", createdUser.ID), map[string]any{
+	statusResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/iam/users/%d/status", createdUser.ID), map[string]any{
 		"status": 2,
 	}, admin.AccessToken)
 	if statusResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for update status, got %d", statusResp.Code)
 	}
 
-	passwordResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/v1/users/%d/password", createdUser.ID), map[string]any{
+	passwordResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/iam/users/%d/password", createdUser.ID), map[string]any{
 		"password": "new-password",
 	}, admin.AccessToken)
 	if passwordResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for reset password, got %d", passwordResp.Code)
 	}
 
-	loginResp := s.doJSON(http.MethodPost, "/api/v1/auth/login", map[string]any{
+	loginResp := s.doJSON(http.MethodPost, "/api/iam/auth/login", map[string]any{
 		"username": "alice",
 		"password": "new-password",
 	}, "")
@@ -260,7 +260,7 @@ func (s *integrationSuite) close() {
 }
 
 func (s *integrationSuite) loginAsAdmin() authLoginData {
-	resp := s.doJSON(http.MethodPost, "/api/v1/auth/login", map[string]any{
+	resp := s.doJSON(http.MethodPost, "/api/iam/auth/login", map[string]any{
 		"username": "admin",
 		"password": "123456",
 	}, "")

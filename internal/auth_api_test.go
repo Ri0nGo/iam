@@ -10,7 +10,7 @@ func TestAuthAPI(t *testing.T) {
 	s := newAPISuite(t)
 	defer s.close()
 
-	loginResp := s.doJSON(http.MethodPost, "/api/v1/auth/login", map[string]any{"username": "admin", "password": "123456"}, "")
+	loginResp := s.doJSON(http.MethodPost, "/api/iam/auth/login", map[string]any{"username": "admin", "password": "123456"}, "")
 	if loginResp.Code != http.StatusOK {
 		t.Fatalf("login status=%d body=%s", loginResp.Code, loginResp.Body.String())
 	}
@@ -25,7 +25,7 @@ func TestAuthAPI(t *testing.T) {
 		t.Fatal("expected access token")
 	}
 
-	meResp := s.doJSON(http.MethodGet, "/api/v1/auth/me", nil, loginData.AccessToken)
+	meResp := s.doJSON(http.MethodGet, "/api/iam/auth/me", nil, loginData.AccessToken)
 	if meResp.Code != http.StatusOK {
 		t.Fatalf("me status=%d body=%s", meResp.Code, meResp.Body.String())
 	}
@@ -49,17 +49,17 @@ func TestAuthAPI(t *testing.T) {
 		t.Fatalf("expected /auth/me remark and last_login_at, got remark=%q last_login_at=%#v", meData.Remark, meData.LastLoginAt)
 	}
 
-	logoutResp := s.doJSON(http.MethodPost, "/api/v1/auth/logout", nil, loginData.AccessToken)
+	logoutResp := s.doJSON(http.MethodPost, "/api/iam/auth/logout", nil, loginData.AccessToken)
 	if logoutResp.Code != http.StatusOK {
 		t.Fatalf("logout status=%d body=%s", logoutResp.Code, logoutResp.Body.String())
 	}
 
-	blockedResp := s.doJSON(http.MethodGet, "/api/v1/auth/me", nil, loginData.AccessToken)
+	blockedResp := s.doJSON(http.MethodGet, "/api/iam/auth/me", nil, loginData.AccessToken)
 	if blockedResp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected revoked token to be 401, got %d", blockedResp.Code)
 	}
 
-	badLoginResp := s.doJSON(http.MethodPost, "/api/v1/auth/login", map[string]any{"username": "admin", "password": "wrong"}, "")
+	badLoginResp := s.doJSON(http.MethodPost, "/api/iam/auth/login", map[string]any{"username": "admin", "password": "wrong"}, "")
 	if badLoginResp.Code != http.StatusBadRequest {
 		t.Fatalf("expected bad login to be 400, got %d", badLoginResp.Code)
 	}
@@ -69,7 +69,7 @@ func TestCORSPreflight(t *testing.T) {
 	s := newAPISuite(t)
 	defer s.close()
 
-	req := httptest.NewRequest(http.MethodOptions, "/api/v1/users", nil)
+	req := httptest.NewRequest(http.MethodOptions, "/api/iam/users", nil)
 	req.Header.Set("Origin", "http://localhost:3000")
 	req.Header.Set("Access-Control-Request-Method", "GET")
 	w := httptest.NewRecorder()

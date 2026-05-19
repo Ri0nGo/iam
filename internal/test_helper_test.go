@@ -123,7 +123,7 @@ func (s *apiSuite) doJSON(method string, path string, payload any, token string)
 
 func (s *apiSuite) loginAsAdmin() apiLoginData {
 	s.t.Helper()
-	resp := s.doJSON(http.MethodPost, "/api/v1/auth/login", map[string]any{"username": "admin", "password": "123456"}, "")
+	resp := s.doJSON(http.MethodPost, "/api/iam/auth/login", map[string]any{"username": "admin", "password": "123456"}, "")
 	if resp.Code != http.StatusOK {
 		s.t.Fatalf("admin login failed: status=%d body=%s", resp.Code, resp.Body.String())
 	}

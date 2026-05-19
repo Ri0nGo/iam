@@ -13,7 +13,7 @@ func TestAuthApplicationAPI(t *testing.T) {
 	defer s.close()
 	admin := s.loginAsAdmin()
 
-	createResp := s.doJSON(http.MethodPost, "/api/v1/auth-applications", map[string]any{
+	createResp := s.doJSON(http.MethodPost, "/api/iam/auth-applications", map[string]any{
 		"name":          "系统 C OAuth2 认证",
 		"code":          "system-c-oauth2",
 		"client_id":     "system-c",
@@ -34,17 +34,17 @@ func TestAuthApplicationAPI(t *testing.T) {
 		t.Fatalf("unexpected created auth application: %+v", created)
 	}
 
-	listResp := s.doJSON(http.MethodGet, "/api/v1/auth-applications?keyword=system-c", nil, admin.AccessToken)
+	listResp := s.doJSON(http.MethodGet, "/api/iam/auth-applications?keyword=system-c", nil, admin.AccessToken)
 	if listResp.Code != http.StatusOK {
 		t.Fatalf("list auth applications status=%d body=%s", listResp.Code, listResp.Body.String())
 	}
 
-	getResp := s.doJSON(http.MethodGet, fmt.Sprintf("/api/v1/auth-applications/%d", created.ID), nil, admin.AccessToken)
+	getResp := s.doJSON(http.MethodGet, fmt.Sprintf("/api/iam/auth-applications/%d", created.ID), nil, admin.AccessToken)
 	if getResp.Code != http.StatusOK {
 		t.Fatalf("get auth application status=%d body=%s", getResp.Code, getResp.Body.String())
 	}
 
-	updateResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/v1/auth-applications/%d", created.ID), map[string]any{
+	updateResp := s.doJSON(http.MethodPut, fmt.Sprintf("/api/iam/auth-applications/%d", created.ID), map[string]any{
 		"name":          "系统 C OAuth2 认证 Updated",
 		"code":          "system-c-oauth2-updated",
 		"client_id":     "system-c-updated",
@@ -65,12 +65,12 @@ func TestAuthApplicationAPI(t *testing.T) {
 		t.Fatalf("unexpected updated auth application: %+v", updated)
 	}
 
-	deleteResp := s.doJSON(http.MethodDelete, fmt.Sprintf("/api/v1/auth-applications/%d", created.ID), nil, admin.AccessToken)
+	deleteResp := s.doJSON(http.MethodDelete, fmt.Sprintf("/api/iam/auth-applications/%d", created.ID), nil, admin.AccessToken)
 	if deleteResp.Code != http.StatusOK {
 		t.Fatalf("delete auth application status=%d body=%s", deleteResp.Code, deleteResp.Body.String())
 	}
 
-	getDeletedResp := s.doJSON(http.MethodGet, fmt.Sprintf("/api/v1/auth-applications/%d", created.ID), nil, admin.AccessToken)
+	getDeletedResp := s.doJSON(http.MethodGet, fmt.Sprintf("/api/iam/auth-applications/%d", created.ID), nil, admin.AccessToken)
 	if getDeletedResp.Code != http.StatusNotFound {
 		t.Fatalf("expected deleted auth application get to be 404, got %d", getDeletedResp.Code)
 	}

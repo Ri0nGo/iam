@@ -14,12 +14,12 @@ func TestOAuthAPI(t *testing.T) {
 
 	admin := s.loginAsAdmin()
 
-	badPreviewResp := s.doJSON(http.MethodGet, "/api/v1/oauth/authorize?response_type=code&client_id=system-a&redirect_uri=http://evil.local/callback", nil, admin.AccessToken)
+	badPreviewResp := s.doJSON(http.MethodGet, "/api/iam/oauth/authorize?response_type=code&client_id=system-a&redirect_uri=http://evil.local/callback", nil, admin.AccessToken)
 	if badPreviewResp.Code != http.StatusBadRequest {
 		t.Fatalf("expected invalid redirect_uri to be 400, got %d", badPreviewResp.Code)
 	}
 
-	authorizeResp := s.doJSON(http.MethodGet, "/api/v1/oauth/authorize?response_type=code&client_id=system-a&redirect_uri=http://system-a.local/callback&state=xyz&scope=basic", nil, admin.AccessToken)
+	authorizeResp := s.doJSON(http.MethodGet, "/api/iam/oauth/authorize?response_type=code&client_id=system-a&redirect_uri=http://system-a.local/callback&state=xyz&scope=basic", nil, admin.AccessToken)
 	if authorizeResp.Code != http.StatusFound {
 		t.Fatalf("oauth authorize status=%d body=%s", authorizeResp.Code, authorizeResp.Body.String())
 	}
@@ -32,7 +32,7 @@ func TestOAuthAPI(t *testing.T) {
 		t.Fatal("expected authorization code")
 	}
 
-	tokenURL := "/api/v1/oauth/token?client_id=system-a&secret=system-a-secret&grant_type=authorization_code&code=" + url.QueryEscape(code)
+	tokenURL := "/api/iam/oauth/token?client_id=system-a&secret=system-a-secret&grant_type=authorization_code&code=" + url.QueryEscape(code)
 	tokenResp := s.doJSON(http.MethodGet, tokenURL, nil, "")
 	if tokenResp.Code != http.StatusOK {
 		t.Fatalf("oauth token status=%d body=%s", tokenResp.Code, tokenResp.Body.String())
@@ -48,17 +48,17 @@ func TestOAuthAPI(t *testing.T) {
 		t.Fatalf("expected oauth token response openid=ou_admin, got %q", token.OpenID)
 	}
 
-	loginTokenUserinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(admin.AccessToken), nil, "")
+	loginTokenUserinfoResp := s.doJSON(http.MethodGet, "/api/iam/oauth/userinfo?access_token="+url.QueryEscape(admin.AccessToken), nil, "")
 	if loginTokenUserinfoResp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected login access token to be rejected by oauth userinfo, got %d", loginTokenUserinfoResp.Code)
 	}
 
-	missingOpenIDResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(token.AccessToken), nil, "")
+	missingOpenIDResp := s.doJSON(http.MethodGet, "/api/iam/oauth/userinfo?access_token="+url.QueryEscape(token.AccessToken), nil, "")
 	if missingOpenIDResp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected missing openid to be rejected by oauth userinfo, got %d", missingOpenIDResp.Code)
 	}
 
-	userinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(token.AccessToken)+"&openid="+url.QueryEscape(token.OpenID), nil, "")
+	userinfoResp := s.doJSON(http.MethodGet, "/api/iam/oauth/userinfo?access_token="+url.QueryEscape(token.AccessToken)+"&openid="+url.QueryEscape(token.OpenID), nil, "")
 	if userinfoResp.Code != http.StatusOK {
 		t.Fatalf("oauth userinfo status=%d body=%s", userinfoResp.Code, userinfoResp.Body.String())
 	}
@@ -73,12 +73,12 @@ func TestOAuthAPI(t *testing.T) {
 		t.Fatalf("expected oauth userinfo to omit id, got %s", string(userinfoEnvelope.Data))
 	}
 
-	checkResp := s.doJSON(http.MethodGet, "/api/v1/oauth/auth?access_token="+url.QueryEscape(token.AccessToken)+"&openid="+url.QueryEscape(token.OpenID), nil, "")
+	checkResp := s.doJSON(http.MethodGet, "/api/iam/oauth/auth?access_token="+url.QueryEscape(token.AccessToken)+"&openid="+url.QueryEscape(token.OpenID), nil, "")
 	if checkResp.Code != http.StatusOK {
 		t.Fatalf("oauth auth status=%d body=%s", checkResp.Code, checkResp.Body.String())
 	}
 
-	refreshResp := s.doJSON(http.MethodGet, "/api/v1/oauth/refresh_token?client_id=system-a&grant_type=refresh_token&refresh_token="+url.QueryEscape(token.RefreshToken), nil, "")
+	refreshResp := s.doJSON(http.MethodGet, "/api/iam/oauth/refresh_token?client_id=system-a&grant_type=refresh_token&refresh_token="+url.QueryEscape(token.RefreshToken), nil, "")
 	if refreshResp.Code != http.StatusOK {
 		t.Fatalf("oauth refresh_token status=%d body=%s", refreshResp.Code, refreshResp.Body.String())
 	}

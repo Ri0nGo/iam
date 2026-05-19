@@ -62,7 +62,6 @@ create table users
     id            bigint unsigned auto_increment
         primary key,
     username      varchar(64)             not null,
-    openid        varchar(128)            null,
     display_name  varchar(128)            not null,
     avatar_url    varchar(255) default '' not null,
     mobile        varchar(32)             null,
@@ -71,17 +70,15 @@ create table users
     remark        varchar(255) default '' not null,
     created_at    datetime(3)             null,
     updated_at    datetime(3)             null,
-    open_id       varchar(128)            null,
+    openid        varchar(128)            null,
     last_login_at datetime(3)             null,
     constraint idx_users_email
         unique (email),
     constraint idx_users_mobile
         unique (mobile),
-    constraint idx_users_open_id
-        unique (open_id),
+    constraint idx_users_openid
+        unique (openid),
     constraint idx_users_username
-        unique (username),
-    constraint uk_users_openid
-        unique (openid)
+        unique (username)
 );
 
