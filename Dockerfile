@@ -6,7 +6,7 @@ COPY . .
 
 RUN go env -w GOPROXY=https://goproxy.cn,direct && \
     go env -w GO111MODULE=on && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/iam main.go
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/iam cmd\server\main.go
 
 
 FROM alpine:latest
