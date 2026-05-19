@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1'
+const API_BASE = import.meta.env.VITE_API_BASE || '/api/iam'
 export const AUTH_INVALID_EVENT = 'iam:auth-invalid'
 
 function buildHeaders(token, extraHeaders = {}) {

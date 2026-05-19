@@ -54,7 +54,7 @@ function buildAuthorizeURL(record) {
     scope: 'basic',
     state: 'demo_state',
   })
-  return `/api/v1/oauth/authorize?${query.toString()}`
+  return `/api/iam/oauth/authorize?${query.toString()}`
 }
 
 function buildTokenPayload(record) {
@@ -64,7 +64,7 @@ function buildTokenPayload(record) {
     code: '<code>',
     grant_type: 'authorization_code',
   })
-  return `http://localhost:8080/api/v1/oauth/token?${query.toString()}`
+  return `http://localhost:8080/api/iam/oauth/token?${query.toString()}`
 }
 
 function buildTokenCurl(record) {
@@ -72,7 +72,7 @@ function buildTokenCurl(record) {
 }
 
 function buildRefreshCurl(record) {
-  return `curl "http://localhost:8080/api/v1/oauth/refresh_token?client_id=${encodeURIComponent(record.client_id || '')}&grant_type=refresh_token&refresh_token=<refresh_token>"`
+  return `curl "http://localhost:8080/api/iam/oauth/refresh_token?client_id=${encodeURIComponent(record.client_id || '')}&grant_type=refresh_token&refresh_token=<refresh_token>"`
 }
 
 export default function AuthManagementPage() {
@@ -367,7 +367,7 @@ export default function AuthManagementPage() {
                     <div className="auth-guide-block">
                       <Text strong>3. curl 校验 access_token</Text>
                       <Typography.Paragraph type="secondary">用于确认 access_token 仍然有效且 openid 匹配。</Typography.Paragraph>
-                      <pre className="code-preview">curl "http://localhost:8080/api/v1/oauth/auth?access_token=&lt;access_token&gt;&openid=&lt;openid&gt;"</pre>
+                      <pre className="code-preview">curl "http://localhost:8080/api/iam/oauth/auth?access_token=&lt;access_token&gt;&openid=&lt;openid&gt;"</pre>
                     </div>
                     <div className="auth-guide-block">
                       <Text strong>4. curl 刷新 access_token</Text>
@@ -377,7 +377,7 @@ export default function AuthManagementPage() {
                     <div className="auth-guide-block auth-guide-wide">
                       <Text strong>5. curl 获取用户信息</Text>
                       <Typography.Paragraph type="secondary">使用第 2 步返回的 access_token 和 openid 获取授权用户资料。</Typography.Paragraph>
-                      <pre className="code-preview">curl "http://localhost:8080/api/v1/oauth/userinfo?access_token=&lt;access_token&gt;&openid=&lt;openid&gt;"</pre>
+                      <pre className="code-preview">curl "http://localhost:8080/api/iam/oauth/userinfo?access_token=&lt;access_token&gt;&openid=&lt;openid&gt;"</pre>
                     </div>
                   </div>
                 ),
