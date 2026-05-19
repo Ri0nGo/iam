@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"strings"
+	"time"
 
 	"iam/internal/model"
 
@@ -14,6 +15,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uint64) (*model.User, error)
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 	List(ctx context.Context, keyword string, status int) ([]model.User, error)
+	UpdateLastLoginAt(ctx context.Context, id uint64, lastLoginAt time.Time) error
 	UpdateStatus(ctx context.Context, id uint64, status int) error
 	Delete(ctx context.Context, id uint64) error
 	SetRoles(ctx context.Context, userID uint64, roles []model.Role) error
@@ -58,6 +60,10 @@ func (r *userRepository) List(ctx context.Context, keyword string, status int) (
 	}
 	err := q.Order("id DESC").Find(&users).Error
 	return users, err
+}
+
+func (r *userRepository) UpdateLastLoginAt(ctx context.Context, id uint64, lastLoginAt time.Time) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("last_login_at", lastLoginAt).Error
 }
 
 func (r *userRepository) UpdateStatus(ctx context.Context, id uint64, status int) error {

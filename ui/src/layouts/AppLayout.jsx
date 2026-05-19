@@ -1,11 +1,12 @@
 import { BellOutlined, LockOutlined, LogoutOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
-import { Avatar, Button, Dropdown, Layout, Menu, Space, theme } from 'antd'
+import { Avatar, Button, Dropdown, Layout, Menu, Space, Typography, theme } from 'antd'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAuth } from '../store/auth'
 import { api } from '../lib/request'
 
 const { Header, Sider, Content } = Layout
+const { Text } = Typography
 
 const menuItems = [
   { key: '/dashboard', icon: <BellOutlined />, label: '控制台' },
@@ -50,7 +51,7 @@ export default function AppLayout() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f7fb' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
       <Sider width={268} theme="light" className="app-sider">
         <div className="brand-panel">
           <div className="brand-logo">IAM</div>
@@ -68,15 +69,19 @@ export default function AppLayout() {
 
       <Layout>
         <Header className="app-header">
-          <div />
+          <div className="header-title">
+            <Text strong>IAM 控制台</Text>
+            <Text type="secondary">统一认证、OAuth2 接入与权限管理</Text>
+          </div>
 
           <Space size={16}>
             <Dropdown menu={userMenu} trigger={['click']}>
               <Button type="text" className="user-trigger">
-                <Space>
+                <Space size={10}>
                   <Avatar style={{ background: designToken.colorPrimary }}>
                     {user?.display_name?.[0] || user?.username?.[0] || 'I'}
                   </Avatar>
+                  <span className="user-trigger-name">{user?.display_name || user?.username || 'IAM'}</span>
                 </Space>
               </Button>
             </Dropdown>

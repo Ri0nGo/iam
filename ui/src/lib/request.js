@@ -4,13 +4,13 @@ export const AUTH_INVALID_EVENT = 'iam:auth-invalid'
 function buildHeaders(token, extraHeaders = {}) {
   const headers = { ...extraHeaders }
   if (token) {
-    headers.Authorization = `Bearer ${token}`
+    headers.Authorization = token
   }
   return headers
 }
 
 export async function request(path, options = {}) {
-  const { token, isOAuthTokenEndpoint = false, ...rest } = options
+  const { token, ...rest } = options
   const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
     headers: buildHeaders(token, rest.headers),
@@ -22,15 +22,11 @@ export async function request(path, options = {}) {
   if (!response.ok) {
     const message = typeof body === 'string'
       ? body
-      : body?.message || body?.error_description || body?.error || 'Request failed'
+      : body?.msg || body?.message || body?.error_description || body?.error || 'Request failed'
     if (response.status === 401 || message.toLowerCase().includes('invalid token')) {
       window.dispatchEvent(new Event(AUTH_INVALID_EVENT))
     }
     throw new Error(message)
-  }
-
-  if (isOAuthTokenEndpoint) {
-    return body
   }
 
   return body.data
@@ -55,11 +51,11 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      isOAuthTokenEndpoint: true,
     })
   },
   oauthUserinfo(token) {
-    return request('/oauth/userinfo', { token })
+    const query = new URLSearchParams({ access_token: token })
+    return request(`/oauth/userinfo?${query.toString()}`)
   },
   listAuthApplications(token, params = {}) {
     const query = new URLSearchParams()

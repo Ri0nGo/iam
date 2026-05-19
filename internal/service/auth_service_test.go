@@ -27,10 +27,11 @@ func (f *fakeUserRepo) GetByUsername(context.Context, string) (*model.User, erro
 func (f *fakeUserRepo) List(context.Context, string, int) ([]model.User, error) {
 	return []model.User{}, nil
 }
-func (f *fakeUserRepo) UpdateStatus(context.Context, uint64, int) error        { return nil }
-func (f *fakeUserRepo) Delete(context.Context, uint64) error                   { return nil }
-func (f *fakeUserRepo) SetRoles(context.Context, uint64, []model.Role) error   { return nil }
-func (f *fakeUserRepo) GetRoles(context.Context, uint64) ([]model.Role, error) { return f.roles, nil }
+func (f *fakeUserRepo) UpdateLastLoginAt(context.Context, uint64, time.Time) error { return nil }
+func (f *fakeUserRepo) UpdateStatus(context.Context, uint64, int) error            { return nil }
+func (f *fakeUserRepo) Delete(context.Context, uint64) error                       { return nil }
+func (f *fakeUserRepo) SetRoles(context.Context, uint64, []model.Role) error       { return nil }
+func (f *fakeUserRepo) GetRoles(context.Context, uint64) ([]model.Role, error)     { return f.roles, nil }
 
 type fakeIdentityRepo struct{ identity *model.AuthIdentity }
 

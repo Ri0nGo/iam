@@ -12,15 +12,12 @@ class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def request_json(opener, method, url, payload=None, token=None):
+def request_json(opener, method, url, payload=None):
     data = None
     headers = {"Accept": "application/json"}
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
         headers["Content-Type"] = "application/json"
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with opener.open(req, timeout=10) as resp:
@@ -120,7 +117,8 @@ def main():
         print("No access_token returned", file=sys.stderr)
         return 1
 
-    status, userinfo = request_json(opener, "GET", f"{base_url}/oauth/userinfo", token=access_token)
+    userinfo_url = f"{base_url}/oauth/userinfo?" + urllib.parse.urlencode({"access_token": access_token})
+    status, userinfo = request_json(opener, "GET", userinfo_url)
     print_step("4. userinfo", status, userinfo)
     return 0 if status == 200 else 1
 

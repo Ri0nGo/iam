@@ -3,6 +3,7 @@ package internal_test
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"testing"
 
 	"iam/internal/model"
@@ -43,6 +44,9 @@ func TestUserAPI(t *testing.T) {
 	}
 	if createdUser.OpenID == nil || *createdUser.OpenID == "" {
 		t.Fatal("expected generated openid")
+	}
+	if !regexp.MustCompile(`^o[0-9A-Za-z]{27}$`).MatchString(*createdUser.OpenID) {
+		t.Fatalf("expected wechat-style openid, got %q", *createdUser.OpenID)
 	}
 
 	listResp := s.doJSON(http.MethodGet, "/api/v1/users?keyword=alice", nil, admin.AccessToken)

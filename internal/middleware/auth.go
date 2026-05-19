@@ -3,6 +3,7 @@ package middleware
 import (
 	"strings"
 
+	jwtpkg "iam/internal/pkg/jwt"
 	"iam/internal/pkg/resp"
 	"iam/internal/service"
 
@@ -12,16 +13,16 @@ import (
 
 func Auth(authService service.AuthService, redisClient *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := ""
-		authHeader := c.GetHeader("Authorization")
-		if strings.HasPrefix(authHeader, "Bearer ") {
-			token = strings.TrimPrefix(authHeader, "Bearer ")
-		} else if cookie, err := c.Cookie("iam_access_token"); err == nil {
-			token = cookie
+		token := strings.TrimSpace(c.GetHeader("Authorization"))
+		if token == "" {
+			cookie, err := c.Cookie("iam_access_token")
+			if err == nil {
+				token = cookie
+			}
 		}
 
 		if token == "" {
-			resp.Fail(c, 401, "missing bearer token")
+			resp.Fail(c, 401, "missing access token")
 			c.Abort()
 			return
 		}
@@ -35,6 +36,11 @@ func Auth(authService service.AuthService, redisClient *redis.Client) gin.Handle
 
 		if ok, _ := redisClient.Exists(c.Request.Context(), "iam:token:blacklist:"+claims.ID).Result(); ok > 0 {
 			resp.Fail(c, 401, "token already revoked")
+			c.Abort()
+			return
+		}
+		if claims.TokenUse != jwtpkg.TokenUseConsole {
+			resp.Fail(c, 401, "invalid token use")
 			c.Abort()
 			return
 		}

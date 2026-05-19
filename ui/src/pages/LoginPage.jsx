@@ -19,11 +19,11 @@ export default function LoginPage() {
     try {
       const data = await api.login(values)
       const redirect = searchParams.get('redirect')
+      login(data)
       if (redirect) {
         window.location.replace(redirect)
         return
       }
-      login(data)
       message.success('登录成功')
       navigate('/dashboard', { replace: true })
     } catch (error) {
@@ -49,7 +49,7 @@ export default function LoginPage() {
             </Paragraph>
             <Space size={12} wrap>
               <div className="feature-chip"><SafetyCertificateOutlined /> 授权码模式</div>
-              <div className="feature-chip"><LockOutlined /> Bearer Token</div>
+              <div className="feature-chip"><LockOutlined /> Access Token</div>
               <div className="feature-chip"><UserOutlined /> 用户与角色中心</div>
             </Space>
           </div>

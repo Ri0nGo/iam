@@ -450,7 +450,7 @@ CREATE TABLE oauth_clients (
 
 鉴权中间件职责：
 
-- 校验 `Authorization: Bearer <token>`
+- 校验 `Authorization: <access_token>` 或登录 Cookie
 - 校验签名、过期时间、发行方
 - 校验 `jti` 是否在 `Redis` 黑名单中
 - 将用户上下文写入 `Gin Context`

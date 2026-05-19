@@ -27,14 +27,13 @@ import (
 )
 
 type responseEnvelope struct {
-	Code    int             `json:"code"`
-	Message string          `json:"message"`
-	Data    json.RawMessage `json:"data"`
+	Code int             `json:"code"`
+	Msg  string          `json:"msg"`
+	Data json.RawMessage `json:"data"`
 }
 
 type authLoginData struct {
 	AccessToken string          `json:"access_token"`
-	TokenType   string          `json:"token_type"`
 	ExpiresIn   int64           `json:"expires_in"`
 	User        dto.CurrentUser `json:"user"`
 }
@@ -93,35 +92,42 @@ func TestOAuth2Flow(t *testing.T) {
 		t.Fatal("expected authorization code")
 	}
 
-	tokenResp := s.doJSON(http.MethodPost, "/api/v1/oauth/token", map[string]any{
-		"grant_type":    "authorization_code",
-		"client_id":     "system-a",
-		"client_secret": "system-a-secret",
-		"code":          code,
-		"redirect_uri":  "http://system-a.local/callback",
-	}, "")
+	tokenURL := "/api/v1/oauth/token?client_id=system-a&secret=system-a-secret&grant_type=authorization_code&code=" + url.QueryEscape(code)
+	tokenResp := s.doJSON(http.MethodGet, tokenURL, nil, "")
 	if tokenResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for oauth token, got %d body=%s", tokenResp.Code, tokenResp.Body.String())
 	}
 
+	var tokenEnvelope responseEnvelope
+	decodeJSON(t, tokenResp.Body.Bytes(), &tokenEnvelope)
 	var tokenData dto.TokenResponse
-	decodeJSON(t, tokenResp.Body.Bytes(), &tokenData)
-	if tokenData.AccessToken == "" {
-		t.Fatal("expected access token from oauth token endpoint")
+	decodeJSON(t, tokenEnvelope.Data, &tokenData)
+	if tokenData.AccessToken == "" || tokenData.RefreshToken == "" {
+		t.Fatal("expected access token and refresh token from oauth token endpoint")
+	}
+	if tokenData.OpenID != "ou_admin" {
+		t.Fatalf("expected openid ou_admin from oauth token endpoint, got %q", tokenData.OpenID)
 	}
 
-	userinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo", nil, tokenData.AccessToken)
+	loginTokenUserinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(login.AccessToken), nil, "")
+	if loginTokenUserinfoResp.Code != http.StatusUnauthorized {
+		t.Fatalf("expected login token to be rejected by oauth userinfo, got %d", loginTokenUserinfoResp.Code)
+	}
+
+	userinfoResp := s.doJSON(http.MethodGet, "/api/v1/oauth/userinfo?access_token="+url.QueryEscape(tokenData.AccessToken)+"&openid="+url.QueryEscape(tokenData.OpenID), nil, "")
 	if userinfoResp.Code != http.StatusOK {
 		t.Fatalf("expected 200 for oauth userinfo, got %d", userinfoResp.Code)
 	}
+	checkResp := s.doJSON(http.MethodGet, "/api/v1/oauth/auth?access_token="+url.QueryEscape(tokenData.AccessToken)+"&openid="+url.QueryEscape(tokenData.OpenID), nil, "")
+	if checkResp.Code != http.StatusOK {
+		t.Fatalf("expected 200 for oauth auth, got %d body=%s", checkResp.Code, checkResp.Body.String())
+	}
+	refreshResp := s.doJSON(http.MethodGet, "/api/v1/oauth/refresh_token?client_id=system-a&grant_type=refresh_token&refresh_token="+url.QueryEscape(tokenData.RefreshToken), nil, "")
+	if refreshResp.Code != http.StatusOK {
+		t.Fatalf("expected 200 for oauth refresh_token, got %d body=%s", refreshResp.Code, refreshResp.Body.String())
+	}
 
-	secondTokenResp := s.doJSON(http.MethodPost, "/api/v1/oauth/token", map[string]any{
-		"grant_type":    "authorization_code",
-		"client_id":     "system-a",
-		"client_secret": "system-a-secret",
-		"code":          code,
-		"redirect_uri":  "http://system-a.local/callback",
-	}, "")
+	secondTokenResp := s.doJSON(http.MethodGet, tokenURL, nil, "")
 	if secondTokenResp.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 for reused authorization code, got %d", secondTokenResp.Code)
 	}
@@ -285,7 +291,8 @@ func (s *integrationSuite) doJSON(method string, path string, payload any, token
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", token)
+		req.AddCookie(&http.Cookie{Name: "iam_access_token", Value: token})
 	}
 	w := httptest.NewRecorder()
 	s.engine.ServeHTTP(w, req)
@@ -299,7 +306,8 @@ func seedTestData(t *testing.T, db *gorm.DB) {
 	if err := db.WithContext(ctx).Create(&adminRole).Error; err != nil {
 		t.Fatal(err)
 	}
-	adminUser := model.User{Username: "admin", DisplayName: "系统管理员", Status: 1}
+	adminOpenID := "ou_admin"
+	adminUser := model.User{Username: "admin", OpenID: &adminOpenID, DisplayName: "系统管理员", Status: 1}
 	if err := db.WithContext(ctx).Create(&adminUser).Error; err != nil {
 		t.Fatal(err)
 	}

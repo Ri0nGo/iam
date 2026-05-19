@@ -109,9 +109,9 @@ func optionalString(v string) *string {
 }
 
 func generateOpenID() (string, error) {
-	value, err := random.Hex(16)
+	value, err := random.AlphaNumeric(27)
 	if err != nil {
 		return "", err
 	}
-	return "ou_" + value, nil
+	return "o" + value, nil
 }

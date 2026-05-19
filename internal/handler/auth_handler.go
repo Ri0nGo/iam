@@ -30,7 +30,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
-	token := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+	token := strings.TrimSpace(c.GetHeader("Authorization"))
 	if token == "" {
 		token, _ = c.Cookie("iam_access_token")
 	}

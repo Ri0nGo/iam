@@ -32,7 +32,10 @@ func New(authService service.AuthService, redisClient *redis.Client, handlers Ha
 		oauth := api.Group("/oauth")
 		{
 			oauth.GET("/authorize", handlers.OAuth.Authorize)
+			oauth.GET("/token", handlers.OAuth.Token)
 			oauth.POST("/token", handlers.OAuth.Token)
+			oauth.GET("/refresh_token", handlers.OAuth.RefreshToken)
+			oauth.GET("/auth", handlers.OAuth.CheckToken)
 			oauth.GET("/userinfo", handlers.OAuth.UserInfo)
 		}
 

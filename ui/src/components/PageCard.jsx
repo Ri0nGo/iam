@@ -7,7 +7,7 @@ export default function PageCard({ title, subtitle, extra, children }) {
     <Card className="page-card" extra={extra}>
       {(title || subtitle) && (
         <Space direction="vertical" size={2} style={{ marginBottom: 20 }}>
-          {title ? <Title level={4} style={{ margin: 0, fontSize: 18 }}>{title}</Title> : null}
+          {title ? <Title level={4} style={{ margin: 0, fontSize: 16, fontWeight: 500 }}>{title}</Title> : null}
           {subtitle ? <Text type="secondary">{subtitle}</Text> : null}
         </Space>
       )}

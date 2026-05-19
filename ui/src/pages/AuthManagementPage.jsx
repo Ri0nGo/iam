@@ -1,5 +1,5 @@
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
-import { App, Button, Drawer, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Drawer, Form, Input, Modal, Popconfirm, Select, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import PageCard from '../components/PageCard'
 import { api } from '../lib/request'
@@ -20,8 +20,10 @@ const responseTypeOptions = [
   { label: 'code', value: 'code' },
 ]
 
-function randomToken(prefix = '') {
-  return `${prefix}${Math.random().toString(36).slice(2, 10)}`
+function randomToken(length) {
+  const bytes = new Uint8Array(Math.ceil(length / 2))
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, length)
 }
 
 function toFormValues(record) {
@@ -42,6 +44,35 @@ function toRequestPayload(values) {
     status: values.status,
     remark: values.remark || '',
   }
+}
+
+function buildAuthorizeURL(record) {
+  const query = new URLSearchParams({
+    response_type: record.response_type || 'code',
+    client_id: record.client_id || '',
+    redirect_uri: record.redirect_uri || '',
+    scope: 'basic',
+    state: 'demo_state',
+  })
+  return `/api/v1/oauth/authorize?${query.toString()}`
+}
+
+function buildTokenPayload(record) {
+  const query = new URLSearchParams({
+    client_id: record.client_id || '',
+    secret: record.secret_key || '',
+    code: '<code>',
+    grant_type: 'authorization_code',
+  })
+  return `http://localhost:8080/api/v1/oauth/token?${query.toString()}`
+}
+
+function buildTokenCurl(record) {
+  return `curl "${buildTokenPayload(record)}"`
+}
+
+function buildRefreshCurl(record) {
+  return `curl "http://localhost:8080/api/v1/oauth/refresh_token?client_id=${encodeURIComponent(record.client_id || '')}&grant_type=refresh_token&refresh_token=<refresh_token>"`
 }
 
 export default function AuthManagementPage() {
@@ -84,8 +115,8 @@ export default function AuthManagementPage() {
       type: 'oauth2',
       status: 1,
       response_type: 'code',
-      client_id: randomToken('client_'),
-      secret_key: `${randomToken('secret_')}${randomToken()}`,
+      client_id: randomToken(32),
+      secret_key: `sk_${randomToken(32)}`,
     })
     setDrawerOpen(true)
   }
@@ -122,10 +153,10 @@ export default function AuthManagementPage() {
 
   function regenerate(field) {
     if (field === 'clientId') {
-      form.setFieldValue('client_id', randomToken('client_'))
+      form.setFieldValue('client_id', randomToken(32))
       return
     }
-    form.setFieldValue('secret_key', `${randomToken('secret_')}${randomToken()}`)
+    form.setFieldValue('secret_key', `sk_${randomToken(32)}`)
   }
 
   async function handleSubmit(values) {
@@ -277,20 +308,82 @@ export default function AuthManagementPage() {
         title={previewRecord ? `认证详情 · ${previewRecord.name}` : '认证详情'}
         open={!!previewRecord}
         onCancel={() => setPreviewRecord(null)}
+        width={920}
         footer={null}
       >
         {previewRecord ? (
-          <Space direction="vertical" size={14} style={{ width: '100%' }}>
-            <div className="detail-block"><Text type="secondary">认证名称</Text><div>{previewRecord.name}</div></div>
-            <div className="detail-block"><Text type="secondary">认证编码</Text><div>{previewRecord.code}</div></div>
-            <div className="detail-block"><Text type="secondary">认证类型</Text><div>OAuth2</div></div>
-            <div className="detail-block"><Text type="secondary">client_id</Text><div>{previewRecord.client_id || '-'}</div></div>
-            <div className="detail-block"><Text type="secondary">secret_key</Text><div>{previewRecord.secret_key || '-'}</div></div>
-            <div className="detail-block"><Text type="secondary">response_type</Text><div>{previewRecord.response_type || 'code'}</div></div>
-            <div className="detail-block"><Text type="secondary">回调地址</Text><div>{previewRecord.redirect_uri || '-'}</div></div>
-            <div className="detail-block"><Text type="secondary">状态</Text><div>{previewRecord.status === 1 ? '启用' : '禁用'}</div></div>
-            <div className="detail-block"><Text type="secondary">备注</Text><div>{previewRecord.remark || '-'}</div></div>
-          </Space>
+          <Tabs
+            items={[
+              {
+                key: 'info',
+                label: '应用信息',
+                children: (
+                  <div className="auth-detail-grid">
+                    <div className="auth-detail-card">
+                      <div className="auth-detail-title">基础信息</div>
+                      <div className="auth-detail-row"><Text type="secondary">认证名称</Text><span>{previewRecord.name}</span></div>
+                      <div className="auth-detail-row"><Text type="secondary">认证编码</Text><span>{previewRecord.code}</span></div>
+                      <div className="auth-detail-row"><Text type="secondary">认证类型</Text><Tag color="purple">OAuth2</Tag></div>
+                      <div className="auth-detail-row"><Text type="secondary">状态</Text><Tag color={previewRecord.status === 1 ? 'green' : 'red'}>{previewRecord.status === 1 ? '启用' : '禁用'}</Tag></div>
+                    </div>
+                    <div className="auth-detail-card auth-credential-card">
+                      <div className="auth-detail-title">客户端凭据</div>
+                      <div className="auth-secret-item">
+                        <div className="auth-secret-label"><span>Client ID</span><Tag color="blue">Public</Tag></div>
+                        <Text copyable className="auth-secret-value">{previewRecord.client_id || '-'}</Text>
+                      </div>
+                      <div className="auth-secret-item auth-secret-item-key">
+                        <div className="auth-secret-label"><span>Secret Key</span><Tag color="gold">Private</Tag></div>
+                        <Text copyable className="auth-secret-value">{previewRecord.secret_key || '-'}</Text>
+                      </div>
+                    </div>
+                    <div className="auth-detail-card auth-detail-wide">
+                      <div className="auth-detail-title">OAuth 配置</div>
+                      <div className="auth-detail-row"><Text type="secondary">response_type</Text><Tag>{previewRecord.response_type || 'code'}</Tag></div>
+                      <div className="auth-detail-row auth-detail-column"><Text type="secondary">回调地址</Text><Text copyable>{previewRecord.redirect_uri || '-'}</Text></div>
+                    </div>
+                    <div className="auth-detail-card auth-detail-wide">
+                      <div className="auth-detail-title">备注</div>
+                      <Typography.Paragraph style={{ margin: 0 }}>{previewRecord.remark || '-'}</Typography.Paragraph>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: 'guide',
+                label: '认证教程',
+                children: (
+                  <div className="auth-guide-grid">
+                    <div className="auth-guide-block">
+                      <Text strong>1. 浏览器获取授权码</Text>
+                      <Typography.Paragraph type="secondary">用户授权后，回调地址会收到一次性 code。</Typography.Paragraph>
+                      <pre className="code-preview">{buildAuthorizeURL(previewRecord)}</pre>
+                    </div>
+                    <div className="auth-guide-block">
+                      <Text strong>2. curl 换取 access_token</Text>
+                      <Typography.Paragraph type="secondary">服务端使用 code、client_id 和 secret 换取访问凭证，openid 在此步骤返回。</Typography.Paragraph>
+                      <pre className="code-preview">{buildTokenCurl(previewRecord)}</pre>
+                    </div>
+                    <div className="auth-guide-block">
+                      <Text strong>3. curl 校验 access_token</Text>
+                      <Typography.Paragraph type="secondary">用于确认 access_token 仍然有效且 openid 匹配。</Typography.Paragraph>
+                      <pre className="code-preview">curl "http://localhost:8080/api/v1/oauth/auth?access_token=&lt;access_token&gt;&openid=&lt;openid&gt;"</pre>
+                    </div>
+                    <div className="auth-guide-block">
+                      <Text strong>4. curl 刷新 access_token</Text>
+                      <Typography.Paragraph type="secondary">access_token 过期后，可用 refresh_token 续期。</Typography.Paragraph>
+                      <pre className="code-preview">{buildRefreshCurl(previewRecord)}</pre>
+                    </div>
+                    <div className="auth-guide-block auth-guide-wide">
+                      <Text strong>5. curl 获取用户信息</Text>
+                      <Typography.Paragraph type="secondary">使用第 2 步返回的 access_token 和 openid 获取授权用户资料。</Typography.Paragraph>
+                      <pre className="code-preview">curl "http://localhost:8080/api/v1/oauth/userinfo?access_token=&lt;access_token&gt;&openid=&lt;openid&gt;"</pre>
+                    </div>
+                  </div>
+                ),
+              },
+            ]}
+          />
         ) : null}
       </Modal>
     </Space>

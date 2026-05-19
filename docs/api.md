@@ -3,13 +3,13 @@
 ## 基础说明
 
 - Base URL: `/api/v1`
-- 通用认证方式：`Authorization: Bearer <access_token>`
-- 通用响应结构：除 `/oauth/token` 外，均使用统一包裹结构。
+- 后台管理接口需要登录后获取的 `access_token` 鉴权。
+- 通用响应结构：所有 JSON 接口均使用统一包裹结构。
 
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {}
 }
 ```
@@ -18,7 +18,7 @@
 
 - `code=0` 表示业务处理成功。
 - HTTP 状态码仍用于表达请求是否成功。
-- `/oauth/token` 为 OAuth2 标准 token 接口，直接返回 token JSON，不使用通用包裹结构。
+- OAuth2 token 相关接口的业务数据放在 `data` 字段中。
 
 ## 认证接口
 
@@ -42,10 +42,9 @@
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {
     "access_token": "jwt-token",
-    "token_type": "Bearer",
     "expires_in": 7200,
     "user": {
       "id": 1,
@@ -69,7 +68,7 @@
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {
     "success": true
   }
@@ -87,9 +86,9 @@
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {
-    "id": 1,
+    "openid": "ou_xxx",
     "username": "admin",
     "display_name": "系统管理员",
     "status": 1,
@@ -104,7 +103,7 @@
 
 - Method: `GET`
 - Path: `/oauth/authorize`
-- Auth: 浏览器入口不需要手动传 Bearer Token；未登录会跳转到 IAM 登录页，已登录会使用 `iam_access_token` Cookie 生成授权码
+- Auth: 浏览器入口不需要手动传 token；未登录会跳转到 IAM 登录页，已登录会使用 `iam_access_token` Cookie 生成授权码
 
 Query 参数：
 
@@ -139,7 +138,7 @@ Location: http://localhost:5173/login?redirect=...
 - Method: `POST`
 - Path: `/oauth/token`
 - Auth: 否
-- Response: OAuth2 标准响应，不使用通用包裹结构
+- Response: 使用统一响应结构，token 数据放在 `data` 中
 
 请求：
 
@@ -147,7 +146,7 @@ Location: http://localhost:5173/login?redirect=...
 {
   "grant_type": "authorization_code",
   "client_id": "system-a",
-  "client_secret": "system-a-secret",
+  "secret": "system-a-secret",
   "code": "authorization-code",
   "redirect_uri": "http://system-a.local/callback"
 }
@@ -157,25 +156,28 @@ Location: http://localhost:5173/login?redirect=...
 
 ```json
 {
-  "access_token": "jwt-token",
-  "token_type": "Bearer",
-  "expires_in": 7200,
-  "scope": "basic"
+  "code": 0,
+  "msg": "ok",
+  "data": {
+    "access_token": "jwt-token",
+    "expires_in": 7200,
+    "scope": "basic"
+  }
 }
 ```
 
 ### OAuth2 用户信息
 
 - Method: `GET`
-- Path: `/oauth/userinfo`
-- Auth: 是
+- Path: `/oauth/userinfo?access_token=ACCESS_TOKEN`
+- Auth: 是，通过 `access_token` query 参数传递
 
 响应：
 
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {
     "id": 1,
     "username": "admin",
@@ -190,7 +192,7 @@ Location: http://localhost:5173/login?redirect=...
 
 ## 认证应用接口
 
-认证应用用于管理 OAuth2 客户端，对应后端 `oauth_clients` 表。所有接口都需要管理员登录后的 Bearer Token。
+认证应用用于管理 OAuth2 客户端，对应后端 `oauth_clients` 表。所有接口都需要管理员登录后的 access token。
 
 ### 创建认证应用
 
@@ -218,7 +220,7 @@ Location: http://localhost:5173/login?redirect=...
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {
     "id": 1,
     "name": "系统 A OAuth2 认证",
@@ -282,7 +284,7 @@ Query 参数：
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "msg": "ok",
   "data": {
     "success": true
   }

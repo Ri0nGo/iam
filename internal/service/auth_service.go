@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"iam/internal/dto"
+	"iam/internal/model"
 	jwtpkg "iam/internal/pkg/jwt"
 	"iam/internal/pkg/password"
 	"iam/internal/repository"
@@ -63,6 +64,11 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	if user.Status != 1 {
 		return nil, fmt.Errorf("user disabled")
 	}
+	lastLoginAt := time.Now()
+	if err := s.users.UpdateLastLoginAt(ctx, user.ID, lastLoginAt); err != nil {
+		return nil, err
+	}
+	user.LastLoginAt = &lastLoginAt
 
 	roles := make([]string, 0, len(user.Roles))
 	for _, role := range user.Roles {
@@ -77,15 +83,8 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 
 	return &dto.LoginResponse{
 		AccessToken: token,
-		TokenType:   "Bearer",
 		ExpiresIn:   expiresIn,
-		User: dto.CurrentUser{
-			ID:          user.ID,
-			Username:    user.Username,
-			DisplayName: user.DisplayName,
-			Status:      user.Status,
-			Roles:       roles,
-		},
+		User:        toCurrentUser(user, roles),
 	}, nil
 }
 
@@ -110,7 +109,26 @@ func (s *authService) Me(ctx context.Context, userID uint64) (*dto.CurrentUser, 
 	for _, role := range user.Roles {
 		roles = append(roles, role.Code)
 	}
-	return &dto.CurrentUser{ID: user.ID, Username: user.Username, DisplayName: user.DisplayName, Status: user.Status, Roles: roles}, nil
+	currentUser := toCurrentUser(user, roles)
+	return &currentUser, nil
+}
+
+func toCurrentUser(user *model.User, roles []string) dto.CurrentUser {
+	return dto.CurrentUser{
+		ID:          user.ID,
+		Username:    user.Username,
+		OpenID:      user.OpenID,
+		DisplayName: user.DisplayName,
+		AvatarURL:   user.AvatarURL,
+		Mobile:      user.Mobile,
+		Email:       user.Email,
+		Status:      user.Status,
+		Remark:      user.Remark,
+		LastLoginAt: user.LastLoginAt,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Roles:       roles,
+	}
 }
 
 func (s *authService) ParseToken(token string) (*jwtpkg.Claims, error) {

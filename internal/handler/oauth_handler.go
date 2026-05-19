@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"iam/internal/dto"
+	jwtpkg "iam/internal/pkg/jwt"
 	"iam/internal/pkg/resp"
 	"iam/internal/service"
 
@@ -46,12 +47,9 @@ func (h *OAuthHandler) Authorize(c *gin.Context) {
 }
 
 func (h *OAuthHandler) currentUserID(c *gin.Context) (uint64, bool) {
-	token := ""
-	authHeader := c.GetHeader("Authorization")
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		token = strings.TrimPrefix(authHeader, "Bearer ")
-	} else if cookie, err := c.Cookie("iam_access_token"); err == nil {
-		token = cookie
+	token, err := c.Cookie("iam_access_token")
+	if err != nil {
+		token = ""
 	}
 	if token == "" {
 		return 0, false
@@ -59,6 +57,9 @@ func (h *OAuthHandler) currentUserID(c *gin.Context) (uint64, bool) {
 
 	claims, err := h.auth.ParseToken(token)
 	if err != nil {
+		return 0, false
+	}
+	if claims.TokenUse != jwtpkg.TokenUseConsole {
 		return 0, false
 	}
 	if ok, _ := h.redis.Exists(c.Request.Context(), "iam:token:blacklist:"+claims.ID).Result(); ok > 0 {
@@ -76,36 +77,69 @@ func (h *OAuthHandler) loginRedirectURL(c *gin.Context) string {
 	if loginURL == "" {
 		loginURL = "/login"
 	}
+	redirect := h.authorizeRedirectURL(c, loginURL)
+	return loginURL + "?redirect=" + url.QueryEscape(redirect)
+}
+
+func (h *OAuthHandler) authorizeRedirectURL(c *gin.Context, loginURL string) string {
+	if u, err := url.Parse(loginURL); err == nil && u.IsAbs() {
+		return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, c.Request.URL.RequestURI())
+	}
 	scheme := "http"
 	if c.Request.TLS != nil {
 		scheme = "https"
 	}
-	redirect := fmt.Sprintf("%s://%s%s", scheme, c.Request.Host, c.Request.URL.RequestURI())
-	return loginURL + "?redirect=" + url.QueryEscape(redirect)
+	return fmt.Sprintf("%s://%s%s", scheme, c.Request.Host, c.Request.URL.RequestURI())
 }
 
 func (h *OAuthHandler) Token(c *gin.Context) {
 	var req dto.TokenRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_request", "error_description": err.Error()})
+		resp.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	data, err := h.service.Token(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_grant", "error_description": err.Error()})
+		resp.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, data)
+	resp.OK(c, data)
+}
+
+func (h *OAuthHandler) RefreshToken(c *gin.Context) {
+	var req dto.RefreshTokenRequest
+	if err := c.ShouldBind(&req); err != nil {
+		resp.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	data, err := h.service.RefreshToken(c.Request.Context(), req)
+	if err != nil {
+		resp.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp.OK(c, data)
+}
+
+func (h *OAuthHandler) CheckToken(c *gin.Context) {
+	var query dto.CheckTokenQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		resp.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.service.CheckToken(c.Request.Context(), query.AccessToken, query.OpenID); err != nil {
+		resp.Fail(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	resp.OK(c, gin.H{"success": true})
 }
 
 func (h *OAuthHandler) UserInfo(c *gin.Context) {
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		resp.Fail(c, 401, "missing bearer token")
+	token := strings.TrimSpace(c.Query("access_token"))
+	if token == "" {
+		resp.Fail(c, 401, "missing access_token")
 		return
 	}
-	token := strings.TrimPrefix(authHeader, "Bearer ")
-	data, err := h.service.UserInfo(c.Request.Context(), token)
+	data, err := h.service.UserInfo(c.Request.Context(), token, c.Query("openid"))
 	if err != nil {
 		resp.Fail(c, 401, err.Error())
 		return

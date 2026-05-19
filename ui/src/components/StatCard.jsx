@@ -12,7 +12,7 @@ export default function StatCard({ title, value, suffix, note, tags = [] }) {
             {tags.map((tag) => <Tag key={tag}>{tag}</Tag>)}
           </Space>
         </Space>
-        <Statistic value={value} suffix={suffix} valueStyle={{ fontSize: 32, fontWeight: 700 }} />
+        <Statistic value={value} suffix={suffix} valueStyle={{ fontSize: 30, fontWeight: 500 }} />
         <Text type="secondary">{note}</Text>
       </Space>
     </Card>

@@ -25,7 +25,7 @@ export default function DashboardPage() {
         <Col xs={24} sm={12} xl={6}><StatCard title="当前用户体系" value={1} note="统一管理一套用户主身份" tags={['IAM']} /></Col>
         <Col xs={24} sm={12} xl={6}><StatCard title="开放 OAuth2 客户端" value={2} note="默认初始化 system-a / system-b" tags={['OAuth2']} /></Col>
         <Col xs={24} sm={12} xl={6}><StatCard title="核心接口分组" value={4} note="认证、OAuth2、用户、角色" tags={['API']} /></Col>
-        <Col xs={24} sm={12} xl={6}><StatCard title="默认口令有效期" value={7200} suffix="秒" note="JWT Bearer Token 有效期" tags={['JWT']} /></Col>
+        <Col xs={24} sm={12} xl={6}><StatCard title="默认口令有效期" value={7200} suffix="秒" note="Access Token 有效期" tags={['JWT']} /></Col>
       </Row>
 
       <Row gutter={[20, 20]}>

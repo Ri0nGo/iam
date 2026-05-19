@@ -3,13 +3,13 @@ package resp
 import "github.com/gin-gonic/gin"
 
 type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data,omitempty"`
 }
 
-func JSON(c *gin.Context, httpCode int, code int, message string, data interface{}) {
-	c.JSON(httpCode, Response{Code: code, Message: message, Data: data})
+func JSON(c *gin.Context, httpCode int, code int, msg string, data interface{}) {
+	c.JSON(httpCode, Response{Code: code, Msg: msg, Data: data})
 }
 
 func OK(c *gin.Context, data interface{}) {

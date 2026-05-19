@@ -28,6 +28,25 @@ func TestAuthAPI(t *testing.T) {
 	if meResp.Code != http.StatusOK {
 		t.Fatalf("me status=%d body=%s", meResp.Code, meResp.Body.String())
 	}
+	var meEnvelope apiEnvelope
+	decodeAPIJSON(t, meResp.Body.Bytes(), &meEnvelope)
+	var meData struct {
+		OpenID      *string `json:"openid"`
+		Email       *string `json:"email"`
+		Mobile      *string `json:"mobile"`
+		Remark      string  `json:"remark"`
+		LastLoginAt *string `json:"last_login_at"`
+	}
+	decodeAPIJSON(t, meEnvelope.Data, &meData)
+	if meData.OpenID == nil || *meData.OpenID != "ou_admin" {
+		t.Fatalf("expected /auth/me openid=ou_admin, got %#v", meData.OpenID)
+	}
+	if meData.Email == nil || *meData.Email != "admin@example.com" || meData.Mobile == nil || *meData.Mobile != "13900000000" {
+		t.Fatalf("expected /auth/me contact fields, got email=%#v mobile=%#v", meData.Email, meData.Mobile)
+	}
+	if meData.Remark == "" || meData.LastLoginAt == nil {
+		t.Fatalf("expected /auth/me remark and last_login_at, got remark=%q last_login_at=%#v", meData.Remark, meData.LastLoginAt)
+	}
 
 	logoutResp := s.doJSON(http.MethodPost, "/api/v1/auth/logout", nil, loginData.AccessToken)
 	if logoutResp.Code != http.StatusOK {

@@ -42,9 +42,9 @@ func NewApp() (*App, error) {
 	if err := redisClient.Ping(context.Background()).Err(); err != nil {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
-	if err := autoMigrate(db); err != nil {
-		return nil, err
-	}
+	// if err := autoMigrate(db); err != nil {
+	// 	return nil, err
+	// }
 	if err := seedData(context.Background(), db, cfg); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,8 @@ func autoMigrate(db *gorm.DB) error {
 }
 
 func seedData(ctx context.Context, db *gorm.DB, cfg *Config) error {
-	return seedAdmin(ctx, db, cfg)
+	// return seedAdmin(ctx, db, cfg)
+	return nil
 }
 
 func seedAdmin(ctx context.Context, db *gorm.DB, cfg *Config) error {

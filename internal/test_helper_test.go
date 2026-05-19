@@ -26,14 +26,13 @@ import (
 )
 
 type apiEnvelope struct {
-	Code    int             `json:"code"`
-	Message string          `json:"message"`
-	Data    json.RawMessage `json:"data"`
+	Code int             `json:"code"`
+	Msg  string          `json:"msg"`
+	Data json.RawMessage `json:"data"`
 }
 
 type apiLoginData struct {
 	AccessToken string          `json:"access_token"`
-	TokenType   string          `json:"token_type"`
 	ExpiresIn   int64           `json:"expires_in"`
 	User        dto.CurrentUser `json:"user"`
 }
@@ -114,7 +113,8 @@ func (s *apiSuite) doJSON(method string, path string, payload any, token string)
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", token)
+		req.AddCookie(&http.Cookie{Name: "iam_access_token", Value: token})
 	}
 	w := httptest.NewRecorder()
 	s.engine.ServeHTTP(w, req)
@@ -141,7 +141,10 @@ func seedAPIData(t *testing.T, db *gorm.DB) {
 	if err := db.WithContext(ctx).Create(&adminRole).Error; err != nil {
 		t.Fatal(err)
 	}
-	adminUser := model.User{Username: "admin", DisplayName: "系统管理员", Status: 1}
+	adminOpenID := "ou_admin"
+	adminEmail := "admin@example.com"
+	adminMobile := "13900000000"
+	adminUser := model.User{Username: "admin", OpenID: &adminOpenID, DisplayName: "系统管理员", Email: &adminEmail, Mobile: &adminMobile, Status: 1, Remark: "负责 IAM 平台账号、角色和接入应用的日常管理"}
 	if err := db.WithContext(ctx).Create(&adminUser).Error; err != nil {
 		t.Fatal(err)
 	}
