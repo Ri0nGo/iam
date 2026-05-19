@@ -19,6 +19,7 @@ type Handlers struct {
 
 func New(authService service.AuthService, redisClient *redis.Client, handlers Handlers) *gin.Engine {
 	r := gin.Default()
+	r.Use(middleware.CORS())
 	api := r.Group("/api/v1")
 	{
 		auth := api.Group("/auth")

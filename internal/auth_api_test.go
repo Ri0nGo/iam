@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -61,5 +62,26 @@ func TestAuthAPI(t *testing.T) {
 	badLoginResp := s.doJSON(http.MethodPost, "/api/v1/auth/login", map[string]any{"username": "admin", "password": "wrong"}, "")
 	if badLoginResp.Code != http.StatusBadRequest {
 		t.Fatalf("expected bad login to be 400, got %d", badLoginResp.Code)
+	}
+}
+
+func TestCORSPreflight(t *testing.T) {
+	s := newAPISuite(t)
+	defer s.close()
+
+	req := httptest.NewRequest(http.MethodOptions, "/api/v1/users", nil)
+	req.Header.Set("Origin", "http://localhost:3000")
+	req.Header.Set("Access-Control-Request-Method", "GET")
+	w := httptest.NewRecorder()
+	s.engine.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected CORS preflight status 204, got %d body=%s", w.Code, w.Body.String())
+	}
+	if w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
+		t.Fatalf("unexpected allow origin: %q", w.Header().Get("Access-Control-Allow-Origin"))
+	}
+	if w.Header().Get("Access-Control-Allow-Credentials") != "true" {
+		t.Fatalf("expected credentials allowed")
 	}
 }
