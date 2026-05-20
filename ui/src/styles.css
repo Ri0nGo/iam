@@ -226,6 +226,28 @@ body {
   border-radius: 2px !important;
   border: 0 !important;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+  min-height: 430px;
+  background:
+    linear-gradient(180deg, rgba(230, 247, 255, 0.74) 0%, rgba(255, 255, 255, 0) 42%),
+    #ffffff !important;
+}
+
+.login-card .ant-card-body {
+  padding: 36px 34px !important;
+}
+
+.login-card-header {
+  text-align: center;
+  padding-top: 4px;
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.login-form .ant-input-affix-wrapper,
+.login-form .ant-btn {
+  border-radius: 4px;
 }
 
 .login-ornament {

@@ -1,5 +1,5 @@
 import { LockOutlined, SafetyCertificateOutlined, UserOutlined } from '@ant-design/icons'
-import { Alert, App, Button, Card, Col, Form, Input, Row, Space, Typography } from 'antd'
+import { App, Button, Card, Col, Form, Input, Row, Space, Typography } from 'antd'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/request'
@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div className="login-shell">
       <div className="login-ornament login-ornament-left" />
       <div className="login-ornament login-ornament-right" />
-      <Row gutter={28} style={{ width: 'min(1180px, 100%)', position: 'relative', zIndex: 1 }}>
+      <Row gutter={[28, 28]} align="middle" style={{ width: 'min(1180px, 100%)', position: 'relative', zIndex: 1 }}>
         <Col xs={24} lg={13}>
           <div className="login-copy">
             <div className="brand-pill">IAM PLATFORM</div>
@@ -56,22 +56,20 @@ export default function LoginPage() {
         </Col>
         <Col xs={24} lg={11}>
           <Card className="login-card">
-            <Space direction="vertical" size={18} style={{ width: '100%' }}>
-              <div>
-                <Title level={3} style={{ marginBottom: 8 }}>登录 IAM 控制台</Title>
-                <Text type="secondary">默认账号为 `admin / 123456`，登录后进入控制台。</Text>
+            <Space direction="vertical" size={22} style={{ width: '100%' }}>
+              <div className="login-card-header">
+                <Title level={3} style={{ marginBottom: 8 }}>IAM管理系统</Title>
+                <Text type="secondary">统一管理用户、角色与应用认证。</Text>
               </div>
 
-              <Alert showIcon type="info" message="系统已接入 /auth/login、/auth/me、/oauth/*、/users、/roles 等接口。" />
-
-              <Form layout="vertical" onFinish={onFinish} initialValues={{ username: 'admin', password: '123456' }}>
+              <Form layout="vertical" onFinish={onFinish} className="login-form">
                 <Form.Item label="用户名" name="username" rules={[{ required: true, message: '请输入用户名' }]}>
-                  <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
+                  <Input size="large" prefix={<UserOutlined />} placeholder="请输入用户名" />
                 </Form.Item>
                 <Form.Item label="密码" name="password" rules={[{ required: true, message: '请输入密码' }]}>
-                  <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
+                  <Input.Password size="large" prefix={<LockOutlined />} placeholder="请输入密码" />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" block loading={loading}>
+                <Button type="primary" htmlType="submit" block size="large" loading={loading}>
                   登录控制台
                 </Button>
               </Form>
