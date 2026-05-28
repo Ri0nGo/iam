@@ -643,8 +643,11 @@ body {
 
 @media (max-width: 992px) {
   .login-copy {
-    padding-right: 0;
-    margin-bottom: 20px;
+    display: none;
+  }
+
+  .login-shell {
+    padding: 24px;
   }
 
   .profile-cover {
